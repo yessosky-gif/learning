@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全等三角形判定定理學習遊戲</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            color: #333;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            height: calc(100vh - 20px);
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            border-bottom: 5px solid #FFD700;
+            flex-shrink: 0;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .right-panel {
+            flex: 1;
+            padding: 10px 15px 15px 15px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            background-color: white;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.05);
+            min-height: 0;
+        }
+        
+        .canvas-wrapper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background-color: #f5f9ff;
+        }
+        
+        #triangleCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: pointer;
+        }
+        
+        .controls {
+            background-color: white;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0;
+        }
+        
+        .level-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        
+        .level-title {
+            font-size: 1rem;
+            color: #182848;
+            font-weight: bold;
+        }
+        
+        .level-indicator {
+            background-color: #4b6cb7;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .theorem-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .theorem-btn {
+            flex: 1;
+            min-width: 90px;
+            padding: 6px;
+            border: none;
+            border-radius: 6px;
+            background-color: #eef2ff;
+            color: #4b6cb7;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            font-family: 'Microsoft JhengHei', sans-serif;
+            font-size: 0.8rem;
+        }
+        
+        .theorem-btn:hover {
+            background-color: #dbe4ff;
+            transform: translateY(-2px);
+        }
+        
+        .theorem-btn.selected {
+            background-color: #4b6cb7;
+            color: white;
+            box-shadow: 0 4px 8px rgba(75, 108, 183, 0.3);
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Microsoft JhengHei', sans-serif;
+        }
+        
+        .check-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .check-btn:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+        
+        .reset-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .reset-btn:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .next-btn {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .next-btn:hover {
+            background-color: #0069d9;
+            transform: translateY(-2px);
+        }
+        
+        .feedback {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 6px;
+            display: none;
+            animation: fadeIn 0.5s;
+            font-size: 0.85rem;
+        }
+        
+        .feedback.correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .feedback.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
+        .score-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+        
+        .score-item {
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        
+        .score-value {
+            color: #4b6cb7;
+        }
+        
+        .tutorial {
+            margin-top: 10px;
+            background-color: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #FF8C00;
+            position: relative;
+            display: none;
+        }
+        
+        .tutorial h3 {
+            color: #182848;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        
+        .tutorial p {
+            color: #555;
+            line-height: 1.4;
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+        }
+        
+        .close-tutorial-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #666;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close-tutorial-btn:hover {
+            color: #FF8C00;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+        
+        .triangle-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 6px 8px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            font-size: 0.75rem;
+            max-width: 150px;
+            z-index: 10;
+            border: 1px solid #4b6cb7;
+        }
+        
+        .transformation-controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+        
+        .transform-btn {
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 1px solid #4b6cb7;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            font-size: 0.85rem;
+        }
+        
+        .transform-btn:hover {
+            background-color: #e8f0ff;
+            transform: scale(1.1);
+        }
+        
+        .selected-triangle-info {
+            position: absolute;
+            top: 80px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 6px 8px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            font-size: 0.75rem;
+            max-width: 150px;
+            z-index: 10;
+            border: 1px solid #FF8C00;
+        }
+        
+        /* 三角形名稱標籤樣式 - 固定位置 */
+        .triangle-label {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 6px 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #182848;
+            border: 2px solid;
+            z-index: 5;
+            pointer-events: none;
+            white-space: nowrap;
+            top: 15px;
+            font-family: 'Microsoft JhengHei', sans-serif;
+        }
+        
+        .triangle-label.left {
+            left: 20%;
+            transform: translateX(-50%);
+            border-color: #FF6B6B;
+            color: #FF6B6B;
+            background-color: rgba(255, 107, 107, 0.1);
+        }
+        
+        .triangle-label.right {
+            right: 20%;
+            transform: translateX(50%);
+            border-color: #4ECDC4;
+            color: #4ECDC4;
+            background-color: rgba(78, 205, 196, 0.1);
+        }
+        
+        .current-theorem {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            border-left: 4px solid #4b6cb7;
+        }
+        
+        .current-theorem h3 {
+            color: #182848;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        
+        .current-theorem p {
+            color: #555;
+            font-size: 0.85rem;
+        }
+        
+        .show-tutorial-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 6px 10px;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            font-size: 0.8rem;
+            z-index: 10;
+            border: 1px solid #FF8C00;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .show-tutorial-btn:hover {
+            background-color: rgba(255, 140, 0, 0.1);
+        }
+        
+        .drag-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 140, 0, 0.2);
+            border: 2px dashed #FF8C00;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #FF8C00;
+            z-index: 20;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .drag-indicator.show {
+            opacity: 1;
+        }
+        
+        @media (max-width: 1100px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .canvas-container {
+                min-height: 400px;
+            }
+            
+            .triangle-label {
+                font-size: 1rem;
+                padding: 5px 8px;
+            }
+            
+            .triangle-label.left {
+                left: 25%;
+            }
+            
+            .triangle-label.right {
+                right: 25%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .subtitle {
+                font-size: 0.8rem;
+            }
+            
+            .triangle-label {
+                font-size: 0.9rem;
+                padding: 4px 6px;
+            }
+            
+            .triangle-label.left {
+                left: 30%;
+            }
+            
+            .triangle-label.right {
+                right: 30%;
+            }
+            
+            .show-tutorial-btn {
+                font-size: 0.7rem;
+                padding: 5px 8px;
+            }
+            
+            .theorem-btn {
+                min-width: 80px;
+                font-size: 0.75rem;
+                padding: 5px;
+            }
+            
+            .action-btn {
+                font-size: 0.8rem;
+                padding: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-shapes"></i> 全等三角形判定定理學習遊戲</h1>
+            <p class="subtitle">透過互動遊戲掌握三角形全等的五個判定條件 | 適合初中學生</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="right-panel">
+                <div class="current-theorem">
+                    <h3 id="currentTheoremName">SSS定理（邊邊邊）</h3>
+                    <p id="currentTheoremDesc">如果兩個三角形的三邊對應相等，則這兩個三角形全等。</p>
+                </div>
+                
+                <div class="canvas-container">
+                    <div class="canvas-wrapper">
+                        <canvas id="triangleCanvas"></canvas>
+                        
+                        <!-- 固定的三角形名稱標籤 -->
+                        <div class="triangle-label left" id="triangleLabelLeft">△ABC</div>
+                        <div class="triangle-label right" id="triangleLabelRight">△DEF</div>
+                        
+                        <!-- 拖拽提示 -->
+                        <div class="drag-indicator" id="dragIndicator">拖拽三角形移動</div>
+                        
+                        <!-- 顯示遊戲指南按鈕 -->
+                        <div class="show-tutorial-btn" id="showTutorialBtn">
+                            <i class="fas fa-question-circle"></i> 遊戲指南
+                        </div>
+                        
+                        <!-- 三角形邊角信息提示 -->
+                        <div class="triangle-info">
+                            <p><i class="fas fa-ruler"></i> 紅色數字表示邊長</p>
+                            <p><i class="fas fa-angle-right"></i> 藍色數字表示角度</p>
+                            <p><i class="fas fa-exchange-alt"></i> 可拖拽移動三角形</p>
+                        </div>
+                        
+                        <div class="selected-triangle-info" id="selectedTriangleInfo" style="display:none;">
+                            <p id="selectedTriangleText">已選擇: △ABC</p>
+                            <p>使用按鈕進行變換:</p>
+                        </div>
+                        
+                        <!-- 三角形變換控制按鈕 -->
+                        <div class="transformation-controls">
+                            <div class="transform-btn" id="rotateLeftBtn" title="向左旋轉">
+                                <i class="fas fa-undo"></i>
+                            </div>
+                            <div class="transform-btn" id="rotateRightBtn" title="向右旋轉">
+                                <i class="fas fa-redo"></i>
+                            </div>
+                            <div class="transform-btn" id="flipHorizontalBtn" title="水平翻轉">
+                                <i class="fas fa-arrows-alt-h"></i>
+                            </div>
+                            <div class="transform-btn" id="flipVerticalBtn" title="垂直翻轉">
+                                <i class="fas fa-arrows-alt-v"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <div class="level-info">
+                        <div class="level-title">關卡 1: 隨機全等三角形</div>
+                        <div class="level-indicator">進度: <span id="levelProgress">1/5</span></div>
+                    </div>
+                    
+                    <p style="font-size: 0.9rem; margin-bottom: 5px;">請選擇正確的判定定理：</p>
+                    
+                    <div class="theorem-buttons">
+                        <button class="theorem-btn" data-theorem="sss">SSS（邊邊邊）</button>
+                        <button class="theorem-btn" data-theorem="sas">SAS（邊角邊）</button>
+                        <button class="theorem-btn" data-theorem="asa">ASA（角邊角）</button>
+                        <button class="theorem-btn" data-theorem="aas">AAS（角角邊）</button>
+                        <button class="theorem-btn" data-theorem="hl">HL（斜邊直角邊）</button>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="action-btn reset-btn" id="resetBtn"><i class="fas fa-redo"></i> 重新生成</button>
+                        <button class="action-btn check-btn" id="checkBtn"><i class="fas fa-check-circle"></i> 檢查答案</button>
+                        <button class="action-btn next-btn" id="nextBtn"><i class="fas fa-arrow-right"></i> 下一關</button>
+                    </div>
+                    
+                    <div class="feedback" id="feedback">
+                        <span id="feedbackText"></span>
+                    </div>
+                    
+                    <!-- 遊戲指南 -->
+                    <div class="tutorial" id="tutorial">
+                        <button class="close-tutorial-btn" id="closeTutorialBtn">&times;</button>
+                        <h3><i class="fas fa-lightbulb"></i> 遊戲指南</h3>
+                        <p>1. 遊戲會隨機生成兩個全等三角形，它們的位置、旋轉角度可能不同</p>
+                        <p>2. 圖形區只顯示當前關卡所需定理的邊角信息</p>
+                        <p>3. 拖拽三角形可以移動位置，使用按鈕進行旋轉/翻轉</p>
+                        <p>4. 根據顯示的邊角條件，判斷兩個三角形符合哪個全等定理</p>
+                        <p>5. 點擊對應的判定定理按鈕，然後點擊"檢查答案"</p>
+                        <p>6. 答對後點擊"下一關"繼續學習</p>
+                        <p>7. 三角形名稱固定在畫布兩側，不會隨三角形移動而移動</p>
+                    </div>
+                    
+                    <div class="score-container">
+                        <div class="score-item">得分: <span class="score-value" id="score">0</span></div>
+                        <div class="score-item">正確: <span class="score-value" id="correctCount">0</span>/<span id="totalCount">0</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲狀態
+        const gameState = {
+            currentLevel: 1,
+            totalLevels: 5,
+            score: 0,
+            correctAnswers: 0,
+            totalQuestions: 0,
+            selectedTheorem: null,
+            currentTheorem: null,
+            triangles: [],
+            dragTriangle: null,
+            dragOffset: {x: 0, y: 0},
+            canvasScale: 1,
+            selectedTriangleIndex: -1,
+            theorems: ['sss', 'sas', 'asa', 'aas', 'hl'],
+            hoverTriangleIndex: -1
+        };
+
+        // 定理數據
+        const theoremData = {
+            sss: {
+                name: "SSS定理（邊邊邊）",
+                desc: "如果兩個三角形的三邊對應相等，則這兩個三角形全等。",
+                showEdges: [0, 1, 2],
+                showAngles: []
+            },
+            sas: {
+                name: "SAS定理（邊角邊）",
+                desc: "如果兩個三角形的兩邊及其夾角對應相等，則這兩個三角形全等。",
+                showEdges: [0, 1],
+                showAngles: [1]
+            },
+            asa: {
+                name: "ASA定理（角邊角）",
+                desc: "如果兩個三角形的兩角及其夾邊對應相等，則這兩個三角形全等。",
+                showEdges: [0],
+                showAngles: [0, 1]
+            },
+            aas: {
+                name: "AAS定理（角角邊）",
+                desc: "如果兩個三角形的兩角及其中一角的對邊對應相等，則這兩個三角形全等。",
+                showEdges: [1],
+                showAngles: [0, 1]
+            },
+            hl: {
+                name: "HL定理（斜邊直角邊）",
+                desc: "如果兩個直角三角形的斜邊和一條直角邊對應相等，則這兩個直角三角形全等。",
+                showEdges: [1, 2],
+                showAngles: [0]
+            }
+        };
+
+        // 三角形基本數據
+        const triangleBaseData = {
+            sss: {
+                points: [{x:0, y:0}, {x:100, y:0}, {x:50, y:86.6}],
+                edges: [100, 100, 100],
+                angles: [60, 60, 60]
+            },
+            sas: {
+                points: [{x:0, y:0}, {x:120, y:0}, {x:30, y:70}],
+                edges: [120, 85.4, 85.4],
+                angles: [40, 70, 70]
+            },
+            asa: {
+                points: [{x:0, y:0}, {x:110, y:0}, {x:55, y:70}],
+                edges: [110, 85.1, 85.1],
+                angles: [50, 65, 65]
+            },
+            aas: {
+                points: [{x:0, y:0}, {x:100, y:0}, {x:50, y:60}],
+                edges: [100, 78.1, 78.1],
+                angles: [55, 55, 70]
+            },
+            hl: {
+                points: [{x:0, y:0}, {x:100, y:0}, {x:0, y:60}],
+                edges: [100, 60, 116.6],
+                angles: [90, 31, 59]
+            }
+        };
+
+        // 獲取DOM元素
+        const canvas = document.getElementById('triangleCanvas');
+        const ctx = canvas.getContext('2d');
+        const levelTitle = document.querySelector('.level-title');
+        const levelProgress = document.getElementById('levelProgress');
+        const theoremButtons = document.querySelectorAll('.theorem-btn');
+        const checkBtn = document.getElementById('checkBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const feedback = document.getElementById('feedback');
+        const feedbackText = document.getElementById('feedbackText');
+        const scoreElement = document.getElementById('score');
+        const correctCountElement = document.getElementById('correctCount');
+        const totalCountElement = document.getElementById('totalCount');
+        const rotateLeftBtn = document.getElementById('rotateLeftBtn');
+        const rotateRightBtn = document.getElementById('rotateRightBtn');
+        const flipHorizontalBtn = document.getElementById('flipHorizontalBtn');
+        const flipVerticalBtn = document.getElementById('flipVerticalBtn');
+        const selectedTriangleInfo = document.getElementById('selectedTriangleInfo');
+        const selectedTriangleText = document.getElementById('selectedTriangleText');
+        const canvasWrapper = document.querySelector('.canvas-wrapper');
+        const currentTheoremName = document.getElementById('currentTheoremName');
+        const currentTheoremDesc = document.getElementById('currentTheoremDesc');
+        const showTutorialBtn = document.getElementById('showTutorialBtn');
+        const tutorial = document.getElementById('tutorial');
+        const closeTutorialBtn = document.getElementById('closeTutorialBtn');
+        const triangleLabelLeft = document.getElementById('triangleLabelLeft');
+        const triangleLabelRight = document.getElementById('triangleLabelRight');
+        const dragIndicator = document.getElementById('dragIndicator');
+
+        // 初始化遊戲
+        function initGame() {
+            // 設置高DPI畫布
+            setupCanvas();
+            
+            // 隨機選擇一個定理開始
+            gameState.currentTheorem = gameState.theorems[Math.floor(Math.random() * gameState.theorems.length)];
+            generateRandomTriangles();
+            updateUI();
+            
+            // 設置畫布事件監聽
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('mouseleave', handleMouseLeave);
+            
+            // 設置按鈕事件監聽
+            theoremButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    theoremButtons.forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    gameState.selectedTheorem = btn.dataset.theorem;
+                    draw();
+                });
+            });
+            
+            checkBtn.addEventListener('click', checkAnswer);
+            resetBtn.addEventListener('click', generateRandomTriangles);
+            nextBtn.addEventListener('click', nextLevel);
+            
+            // 設置變換按鈕事件監聽
+            rotateLeftBtn.addEventListener('click', rotateSelectedTriangleLeft);
+            rotateRightBtn.addEventListener('click', rotateSelectedTriangleRight);
+            flipHorizontalBtn.addEventListener('click', flipSelectedTriangleHorizontal);
+            flipVerticalBtn.addEventListener('click', flipSelectedTriangleVertical);
+            
+            // 顯示/隱藏遊戲指南按鈕
+            showTutorialBtn.addEventListener('click', () => {
+                tutorial.style.display = 'block';
+            });
+            
+            // 關閉遊戲指南按鈕
+            closeTutorialBtn.addEventListener('click', () => {
+                tutorial.style.display = 'none';
+            });
+            
+            // 窗口大小變化時重新設置畫布
+            window.addEventListener('resize', () => {
+                setupCanvas();
+                draw();
+            });
+            
+            // 初始隱藏遊戲指南
+            tutorial.style.display = 'none';
+        }
+
+        // 設置高DPI畫布
+        function setupCanvas() {
+            const container = canvas.parentElement;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            
+            const dpr = window.devicePixelRatio || 1;
+            gameState.canvasScale = dpr;
+            
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            
+            ctx.scale(dpr, dpr);
+        }
+
+        // 隨機生成兩個全等三角形
+        function generateRandomTriangles() {
+            // 隨機選擇一個定理
+            const randomTheorem = gameState.theorems[Math.floor(Math.random() * gameState.theorems.length)];
+            gameState.currentTheorem = randomTheorem;
+            gameState.selectedTheorem = null;
+            
+            // 清除選擇
+            theoremButtons.forEach(btn => btn.classList.remove('selected'));
+            
+            // 清除反饋
+            feedback.className = 'feedback';
+            
+            // 獲取當前畫布尺寸
+            const container = canvas.parentElement;
+            const canvasWidth = container.clientWidth;
+            const canvasHeight = container.clientHeight;
+            
+            // 根據定理獲取三角形基礎數據
+            const baseData = triangleBaseData[randomTheorem];
+            
+            // 隨機生成兩個三角形
+            gameState.triangles = [];
+            
+            // 第一個三角形（左側）
+            const triangle1 = {
+                x: canvasWidth * 0.25,
+                y: canvasHeight * 0.55,
+                points: JSON.parse(JSON.stringify(baseData.points)),
+                color: '#FF6B6B',
+                angle: Math.random() * 360,
+                label: 'ABC',
+                vertexLabels: ['A', 'B', 'C'],
+                scaleX: Math.random() > 0.5 ? 1 : -1,
+                scaleY: Math.random() > 0.5 ? 1 : -1,
+                isDraggable: true,
+                isRight: randomTheorem === 'hl',
+                hover: false
+            };
+            
+            // 第二個三角形（右側）
+            const triangle2 = {
+                x: canvasWidth * 0.75,
+                y: canvasHeight * 0.55,
+                points: JSON.parse(JSON.stringify(baseData.points)),
+                color: '#4ECDC4',
+                angle: Math.random() * 360,
+                label: 'DEF',
+                vertexLabels: ['D', 'E', 'F'],
+                scaleX: Math.random() > 0.5 ? 1 : -1,
+                scaleY: Math.random() > 0.5 ? 1 : -1,
+                isDraggable: true,
+                isRight: randomTheorem === 'hl',
+                hover: false
+            };
+            
+            gameState.triangles.push(triangle1, triangle2);
+            
+            // 更新三角形名稱標籤顏色
+            triangleLabelLeft.style.borderColor = triangle1.color;
+            triangleLabelLeft.style.color = triangle1.color;
+            triangleLabelLeft.style.backgroundColor = triangle1.color + '20';
+            
+            triangleLabelRight.style.borderColor = triangle2.color;
+            triangleLabelRight.style.color = triangle2.color;
+            triangleLabelRight.style.backgroundColor = triangle2.color + '20';
+            
+            // 重置選擇
+            gameState.selectedTriangleIndex = -1;
+            gameState.hoverTriangleIndex = -1;
+            selectedTriangleInfo.style.display = 'none';
+            
+            // 更新顯示
+            updateDisplay();
+            draw();
+        }
+
+        // 更新顯示
+        function updateDisplay() {
+            const data = theoremData[gameState.currentTheorem];
+            currentTheoremName.textContent = data.name;
+            currentTheoremDesc.textContent = data.desc;
+            levelTitle.textContent = `關卡 ${gameState.currentLevel}: 隨機全等三角形`;
+            levelProgress.textContent = `${gameState.currentLevel}/${gameState.totalLevels}`;
+        }
+
+        // 檢查點是否在三角形內部
+        function isPointInTriangle(px, py, triangle) {
+            // 將點轉換到三角形的局部坐標系
+            let x = px - triangle.x;
+            let y = py - triangle.y;
+            
+            // 反向旋轉
+            const angleRad = -triangle.angle * Math.PI / 180;
+            const cos = Math.cos(angleRad);
+            const sin = Math.sin(angleRad);
+            let rotatedX = x * cos - y * sin;
+            let rotatedY = x * sin + y * cos;
+            
+            // 反向縮放
+            let scaledX = rotatedX / triangle.scaleX;
+            let scaledY = rotatedY / triangle.scaleY;
+            
+            // 獲取三角形頂點
+            const p0 = triangle.points[0];
+            const p1 = triangle.points[1];
+            const p2 = triangle.points[2];
+            
+            // 使用重心坐標法判斷點是否在三角形內
+            const area = 0.5 * (-p1.y * p2.x + p0.y * (-p1.x + p2.x) + p0.x * (p1.y - p2.y) + p1.x * p2.y);
+            const s = 1 / (2 * area) * (p0.y * p2.x - p0.x * p2.y + (p2.y - p0.y) * scaledX + (p0.x - p2.x) * scaledY);
+            const t = 1 / (2 * area) * (p0.x * p1.y - p0.y * p1.x + (p0.y - p1.y) * scaledX + (p1.x - p0.x) * scaledY);
+            
+            return s > 0 && t > 0 && (1 - s - t) > 0;
+        }
+
+        // 繪製畫布
+        function draw() {
+            const container = canvas.parentElement;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            
+            ctx.clearRect(0, 0, width * gameState.canvasScale, height * gameState.canvasScale);
+            
+            drawGrid(width, height);
+            
+            gameState.triangles.forEach((triangle, index) => {
+                drawTriangle(triangle, triangle.label, index === gameState.selectedTriangleIndex, triangle.hover);
+            });
+        }
+
+        // 繪製網格背景
+        function drawGrid(width, height) {
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.lineWidth = 1;
+            
+            for (let x = 0; x < width; x += 20) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            
+            for (let y = 0; y < height; y += 20) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+        }
+
+        // 繪製單個三角形
+        function drawTriangle(triangle, label, isSelected, isHovered) {
+            ctx.save();
+            
+            ctx.translate(triangle.x, triangle.y);
+            
+            if (triangle.angle !== 0) {
+                ctx.rotate(triangle.angle * Math.PI / 180);
+            }
+            
+            ctx.scale(triangle.scaleX, triangle.scaleY);
+            
+            // 繪製三角形填充
+            const fillAlpha = isHovered ? '60' : '40';
+            ctx.fillStyle = triangle.color + fillAlpha;
+            ctx.beginPath();
+            ctx.moveTo(triangle.points[0].x, triangle.points[0].y);
+            ctx.lineTo(triangle.points[1].x, triangle.points[1].y);
+            ctx.lineTo(triangle.points[2].x, triangle.points[2].y);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 繪製三角形邊框
+            let borderColor = triangle.color;
+            let borderWidth = 3;
+            
+            if (isSelected) {
+                borderColor = '#FF8C00';
+                borderWidth = 4;
+            } else if (isHovered) {
+                borderColor = '#FFA726';
+                borderWidth = 3.5;
+            }
+            
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = borderWidth;
+            ctx.stroke();
+            
+            // 繪製頂點
+            triangle.points.forEach((point, i) => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = triangle.color;
+                ctx.fill();
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                // 在頂點附近標記頂點名稱
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 12px Microsoft JhengHei';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                let offsetX = 0, offsetY = 0;
+                if (i === 0) {
+                    offsetX = -12;
+                    offsetY = -12;
+                } else if (i === 1) {
+                    offsetX = 12;
+                    offsetY = -12;
+                } else {
+                    offsetX = -12;
+                    offsetY = 12;
+                }
+                
+                ctx.fillText(triangle.vertexLabels[i], point.x + offsetX, point.y + offsetY);
+            });
+            
+            // 根據當前定理顯示邊角信息
+            const data = theoremData[gameState.currentTheorem];
+            const baseData = triangleBaseData[gameState.currentTheorem];
+            const showEdges = data.showEdges || [];
+            const showAngles = data.showAngles || [];
+            
+            const edges = [
+                {p1: triangle.points[0], p2: triangle.points[1]},
+                {p1: triangle.points[1], p2: triangle.points[2]},
+                {p1: triangle.points[2], p2: triangle.points[0]}
+            ];
+            
+            // 繪製邊標籤
+            edges.forEach((edge, i) => {
+                if (showEdges.includes(i)) {
+                    const midX = (edge.p1.x + edge.p2.x) / 2;
+                    const midY = (edge.p1.y + edge.p2.y) / 2;
+                    
+                    ctx.fillStyle = '#D32F2F';
+                    ctx.font = 'bold 12px Microsoft JhengHei';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    ctx.fillText(`${baseData.edges[i].toFixed(1)}`, midX, midY - 8);
+                    
+                    drawTickMark(edge.p1, edge.p2, i, triangle.color);
+                }
+            });
+            
+            // 繪製角標籤
+            triangle.points.forEach((point, i) => {
+                if (showAngles.includes(i)) {
+                    const prevPoint = triangle.points[(i + 2) % 3];
+                    const nextPoint = triangle.points[(i + 1) % 3];
+                    
+                    drawAngleArc(prevPoint, point, nextPoint, baseData.angles[i], triangle.color);
+                    
+                    const anglePos = getAngleLabelPosition(prevPoint, point, nextPoint);
+                    ctx.fillStyle = '#1976D2';
+                    ctx.font = 'bold 12px Microsoft JhengHei';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    // 如果是HL定理的直角，繪製直角符號
+                    if (gameState.currentTheorem === 'hl' && i === 0) {
+                        drawRightAngleSymbol(prevPoint, point, nextPoint);
+                    }
+                    
+                    ctx.fillText(`${baseData.angles[i]}°`, anglePos.x, anglePos.y);
+                }
+            });
+            
+            ctx.restore();
+        }
+
+        // 繪製直角符號
+        function drawRightAngleSymbol(prevPoint, vertex, nextPoint) {
+            const size = 10;
+            
+            const v1 = {x: prevPoint.x - vertex.x, y: prevPoint.y - vertex.y};
+            const v2 = {x: nextPoint.x - vertex.x, y: nextPoint.y - vertex.y};
+            
+            const length1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+            const length2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+            
+            const uv1 = {x: v1.x / length1, y: v1.y / length1};
+            const uv2 = {x: v2.x / length2, y: v2.y / length2};
+            
+            const corner1 = {
+                x: vertex.x + uv1.x * size,
+                y: vertex.y + uv1.y * size
+            };
+            
+            const corner2 = {
+                x: vertex.x + uv2.x * size,
+                y: vertex.y + uv2.y * size
+            };
+            
+            ctx.strokeStyle = '#1976D2';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(corner1.x, corner1.y);
+            ctx.lineTo(vertex.x, vertex.y);
+            ctx.lineTo(corner2.x, corner2.y);
+            ctx.stroke();
+        }
+
+        // 繪製等邊標記
+        function drawTickMark(p1, p2, tickIndex, color) {
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const unitX = dx / length;
+            const unitY = dy / length;
+            
+            const perpX = -unitY;
+            const perpY = unitX;
+            
+            const tickPos = 0.3 + tickIndex * 0.2;
+            const markX = p1.x + dx * tickPos;
+            const markY = p1.y + dy * tickPos;
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(markX - perpX * 4, markY - perpY * 4);
+            ctx.lineTo(markX + perpX * 4, markY + perpY * 4);
+            ctx.stroke();
+        }
+
+        // 繪製角度弧線
+        function drawAngleArc(prevPoint, vertex, nextPoint, angle, color) {
+            const v1 = {x: prevPoint.x - vertex.x, y: prevPoint.y - vertex.y};
+            const v2 = {x: nextPoint.x - vertex.x, y: nextPoint.y - vertex.y};
+            
+            const angle1 = Math.atan2(v1.y, v1.x);
+            const angle2 = Math.atan2(v2.y, v2.x);
+            
+            let startAngle = Math.min(angle1, angle2);
+            let endAngle = Math.max(angle1, angle2);
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(vertex.x, vertex.y, 15, startAngle, endAngle);
+            ctx.stroke();
+        }
+
+        // 獲取角度標籤位置
+        function getAngleLabelPosition(prevPoint, vertex, nextPoint) {
+            const v1 = {x: prevPoint.x - vertex.x, y: prevPoint.y - vertex.y};
+            const v2 = {x: nextPoint.x - vertex.x, y: nextPoint.y - vertex.y};
+            
+            const length1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+            const length2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+            
+            const uv1 = {x: v1.x / length1, y: v1.y / length1};
+            const uv2 = {x: v2.x / length2, y: v2.y / length2};
+            
+            const avgDir = {
+                x: (uv1.x + uv2.x) / 2,
+                y: (uv1.y + uv2.y) / 2
+            };
+            
+            const avgLength = Math.sqrt(avgDir.x * avgDir.x + avgDir.y * avgDir.y);
+            const normAvgDir = {
+                x: avgDir.x / avgLength,
+                y: avgDir.y / avgLength
+            };
+            
+            return {
+                x: vertex.x + normAvgDir.x * 25,
+                y: vertex.y + normAvgDir.y * 25
+            };
+        }
+
+        // 檢查答案
+        function checkAnswer() {
+            const selectedTheorem = gameState.selectedTheorem;
+            
+            if (!selectedTheorem) {
+                feedbackText.textContent = "請先選擇一個判定定理！";
+                feedback.className = 'feedback incorrect';
+                return;
+            }
+            
+            gameState.totalQuestions++;
+            
+            const isCorrect = selectedTheorem === gameState.currentTheorem;
+            
+            if (isCorrect) {
+                feedbackText.textContent = `正確！你選擇了${theoremData[gameState.currentTheorem].name}，這是兩個三角形全等的正確判定條件。`;
+                feedback.className = 'feedback correct';
+                gameState.score += 20;
+                gameState.correctAnswers++;
+                
+                canvas.classList.add('pulse');
+                setTimeout(() => canvas.classList.remove('pulse'), 500);
+            } else {
+                feedbackText.textContent = `不正確。這兩個三角形符合${theoremData[gameState.currentTheorem].name}的條件，而不是${theoremData[selectedTheorem]?.name || '所選定理'}。`;
+                feedback.className = 'feedback incorrect';
+                
+                const selectedBtn = document.querySelector(`.theorem-btn[data-theorem="${selectedTheorem}"]`);
+                if (selectedBtn) {
+                    selectedBtn.style.backgroundColor = '#f8d7da';
+                    selectedBtn.style.color = '#721c24';
+                    setTimeout(() => {
+                        selectedBtn.style.backgroundColor = '';
+                        selectedBtn.style.color = '';
+                    }, 1000);
+                }
+            }
+            
+            updateUI();
+        }
+
+        // 下一關
+        function nextLevel() {
+            if (gameState.currentLevel < gameState.totalLevels) {
+                gameState.currentLevel++;
+                generateRandomTriangles();
+                updateUI();
+            } else {
+                feedbackText.textContent = "恭喜！你已經完成了所有關卡的學習！";
+                feedback.className = 'feedback correct';
+            }
+        }
+
+        // 向左旋轉選中的三角形
+        function rotateSelectedTriangleLeft() {
+            rotateSelectedTriangle(-15);
+        }
+        
+        // 向右旋轉選中的三角形
+        function rotateSelectedTriangleRight() {
+            rotateSelectedTriangle(15);
+        }
+        
+        // 旋轉選中的三角形
+        function rotateSelectedTriangle(degrees) {
+            if (gameState.selectedTriangleIndex !== -1) {
+                const triangle = gameState.triangles[gameState.selectedTriangleIndex];
+                triangle.angle += degrees;
+                draw();
+            } else {
+                alert("請先點擊一個三角形選擇它！");
+            }
+        }
+
+        // 水平翻轉選中的三角形
+        function flipSelectedTriangleHorizontal() {
+            flipSelectedTriangle('horizontal');
+        }
+        
+        // 垂直翻轉選中的三角形
+        function flipSelectedTriangleVertical() {
+            flipSelectedTriangle('vertical');
+        }
+        
+        // 翻轉選中的三角形
+        function flipSelectedTriangle(direction) {
+            if (gameState.selectedTriangleIndex !== -1) {
+                const triangle = gameState.triangles[gameState.selectedTriangleIndex];
+                if (direction === 'horizontal') {
+                    triangle.scaleX *= -1;
+                } else if (direction === 'vertical') {
+                    triangle.scaleY *= -1;
+                }
+                draw();
+            } else {
+                alert("請先點擊一個三角形選擇它！");
+            }
+        }
+
+        // 更新UI顯示
+        function updateUI() {
+            scoreElement.textContent = gameState.score;
+            correctCountElement.textContent = gameState.correctAnswers;
+            totalCountElement.textContent = gameState.totalQuestions;
+        }
+
+        // 滑鼠事件處理
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left);
+            const y = (e.clientY - rect.top);
+            
+            startDrag(x, y);
+        }
+
+        function handleMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left);
+            const y = (e.clientY - rect.top);
+            
+            // 檢查滑鼠是否懸停在三角形上
+            let hoverIndex = -1;
+            for (let i = gameState.triangles.length - 1; i >= 0; i--) {
+                const triangle = gameState.triangles[i];
+                if (isPointInTriangle(x, y, triangle)) {
+                    hoverIndex = i;
+                    break;
+                }
+            }
+            
+            // 更新懸停狀態
+            if (gameState.hoverTriangleIndex !== hoverIndex) {
+                if (gameState.hoverTriangleIndex !== -1) {
+                    gameState.triangles[gameState.hoverTriangleIndex].hover = false;
+                }
+                
+                gameState.hoverTriangleIndex = hoverIndex;
+                
+                if (hoverIndex !== -1) {
+                    gameState.triangles[hoverIndex].hover = true;
+                    canvas.style.cursor = 'grab';
+                } else {
+                    canvas.style.cursor = 'pointer';
+                }
+                
+                draw();
+            }
+            
+            // 拖拽處理
+            if (gameState.dragTriangle) {
+                gameState.dragTriangle.x = x - gameState.dragOffset.x;
+                gameState.dragTriangle.y = y - gameState.dragOffset.y;
+                draw();
+            }
+        }
+
+        function handleMouseUp() {
+            if (gameState.dragTriangle) {
+                dragIndicator.classList.remove('show');
+                canvas.style.cursor = 'pointer';
+            }
+            gameState.dragTriangle = null;
+        }
+        
+        function handleMouseLeave() {
+            // 滑鼠離開畫布時清除懸停狀態
+            if (gameState.hoverTriangleIndex !== -1) {
+                gameState.triangles[gameState.hoverTriangleIndex].hover = false;
+                gameState.hoverTriangleIndex = -1;
+                draw();
+            }
+            
+            // 如果正在拖拽，也停止拖拽
+            if (gameState.dragTriangle) {
+                dragIndicator.classList.remove('show');
+                canvas.style.cursor = 'pointer';
+                gameState.dragTriangle = null;
+            }
+        }
+        
+        function startDrag(x, y) {
+            for (let i = gameState.triangles.length - 1; i >= 0; i--) {
+                const triangle = gameState.triangles[i];
+                if (isPointInTriangle(x, y, triangle)) {
+                    gameState.dragTriangle = triangle;
+                    gameState.selectedTriangleIndex = i;
+                    selectedTriangleText.textContent = `已選擇: △${triangle.label}`;
+                    selectedTriangleInfo.style.display = 'block';
+                    gameState.dragOffset = {
+                        x: x - triangle.x,
+                        y: y - triangle.y
+                    };
+                    
+                    const dragged = gameState.triangles.splice(i, 1)[0];
+                    gameState.triangles.push(dragged);
+                    gameState.selectedTriangleIndex = gameState.triangles.length - 1;
+                    gameState.hoverTriangleIndex = gameState.triangles.length - 1;
+                    
+                    // 顯示拖拽提示
+                    dragIndicator.classList.add('show');
+                    canvas.style.cursor = 'grabbing';
+                    
+                    draw();
+                    break;
+                }
+            }
+        }
+
+        // 初始化遊戲
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
