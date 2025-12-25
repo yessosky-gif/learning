@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>動態平行四邊形編輯器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: '微軟正黑體', 'Microsoft JhengHei', Arial, sans-serif;
+            height: 100vh;
+            padding: 15px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            line-height: 1.5;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            flex-shrink: 0;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .main-container {
+            display: flex;
+            flex: 1;
+            gap: 15px;
+            min-height: 0;
+        }
+        
+        .controls {
+            flex: 1;
+            min-width: 280px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        .graph-container {
+            flex: 2;
+            min-width: 400px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .control-group:last-child {
+            border-bottom: none;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+        
+        .slider-container {
+            position: relative;
+            margin-bottom: 5px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: linear-gradient(to right, #3498db, #9b59b6);
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            border: 2px solid #3498db;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .value-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-top: 3px;
+        }
+        
+        .current-value {
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .info-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #e8f4fd 0%, #d6eaf8 100%);
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .properties-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #e8f6f3 0%, #d1f2eb 100%);
+            border-radius: 8px;
+            border-left: 4px solid #16a085;
+        }
+        
+        .info-title {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            text-align: center;
+            font-weight: 700;
+        }
+        
+        .info-item {
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px dashed #aed6f1;
+            font-size: 0.9rem;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #2c3e50;
+            display: inline-block;
+            width: 80px;
+        }
+        
+        #parallelogram-svg {
+            width: 100%;
+            flex: 1;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+            cursor: move;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .reset-btn {
+            background: linear-gradient(to right, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .reset-btn:hover {
+            background: linear-gradient(to right, #2980b9, #2471a3);
+        }
+        
+        .example-btn {
+            background: linear-gradient(to right, #9b59b6, #8e44ad);
+            color: white;
+        }
+        
+        .example-btn:hover {
+            background: linear-gradient(to right, #8e44ad, #7d3c98);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 10px;
+            color: #7f8c8d;
+            font-size: 0.8rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            margin-top: 10px;
+            flex-shrink: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .controls, .graph-container {
+                min-width: 100%;
+            }
+            
+            .graph-container {
+                min-height: 300px;
+            }
+        }
+        
+        .vertex {
+            fill: #3498db;
+            stroke: #2980b9;
+            stroke-width: 2;
+            cursor: move;
+            transition: r 0.2s;
+        }
+        
+        .vertex:hover {
+            r: 8;
+            fill: #2980b9;
+        }
+        
+        .vertex.active {
+            r: 8;
+            fill: #e74c3c;
+        }
+        
+        .side {
+            stroke: #2c3e50;
+            stroke-width: 3;
+            fill: none;
+        }
+        
+        .diagonal {
+            stroke: #7f8c8d;
+            stroke-width: 1;
+            stroke-dasharray: 5,5;
+            fill: none;
+        }
+        
+        .angle-text {
+            font-size: 14px;
+            fill: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .length-text {
+            font-size: 14px;
+            fill: #3498db;
+            font-weight: bold;
+        }
+        
+        .preset-examples {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .preset-btn {
+            padding: 6px;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        
+        .preset-btn:hover {
+            background: #d5dbdb;
+        }
+        
+        .area-calculation {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .drag-hint {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            pointer-events: none;
+        }
+        
+        .property-item {
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px dashed #aed6f1;
+            font-size: 0.9rem;
+        }
+        
+        .property-item:last-child {
+            border-bottom: none;
+        }
+        
+        .property-label {
+            font-weight: 600;
+            color: #2c3e50;
+            display: inline-block;
+            width: 120px;
+        }
+        
+        .property-value {
+            font-weight: 600;
+            color: #16a085;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>動態平行四邊形</h1>
+        <p class="subtitle">拖曳頂點或使用控制桿調整平行四邊形的角度與邊長</p>
+    </div>
+    
+    <div class="main-container">
+        <div class="controls">
+            <div class="control-group">
+                <label for="base-length">底邊長度 (cm):</label>
+                <div class="slider-container">
+                    <input type="range" id="base-length" min="5" max="30" step="0.1" value="15">
+                </div>
+                <div class="value-display">
+                    <span>5 cm</span>
+                    <span id="base-length-display" class="current-value">15 cm</span>
+                    <span>30 cm</span>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="side-length">側邊長度 (cm):</label>
+                <div class="slider-container">
+                    <input type="range" id="side-length" min="5" max="30" step="0.1" value="12">
+                </div>
+                <div class="value-display">
+                    <span>5 cm</span>
+                    <span id="side-length-display" class="current-value">12 cm</span>
+                    <span>30 cm</span>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="angle">角度 (度):</label>
+                <div class="slider-container">
+                    <input type="range" id="angle" min="10" max="170" step="0.5" value="60">
+                </div>
+                <div class="value-display">
+                    <span>10°</span>
+                    <span id="angle-display" class="current-value">60.0°</span>
+                    <span>170°</span>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>預設範例:</label>
+                <div class="preset-examples">
+                    <button class="preset-btn" data-base="15" data-side="12" data-angle="60">一般平行四邊形</button>
+                    <button class="preset-btn" data-base="20" data-side="20" data-angle="90">正方形</button>
+                    <button class="preset-btn" data-base="20" data-side="12" data-angle="90">長方形</button>
+                    <button class="preset-btn" data-base="15" data-side="15" data-angle="45">菱形</button>
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <button class="btn reset-btn" id="reset-btn">重置</button>
+                <button class="btn example-btn" id="random-btn">隨機範例</button>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-title">平行四邊形性質</div>
+                <div class="info-item">
+                    <span class="info-label">底邊長度:</span>
+                    <span id="info-base" class="current-value">15</span><span class="unit"> cm</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">側邊長度:</span>
+                    <span id="info-side" class="current-value">12</span><span class="unit"> cm</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">角度:</span>
+                    <span id="info-angle" class="current-value">60.0</span><span class="unit">°</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">周長:</span>
+                    <span id="info-perimeter" class="current-value">54</span><span class="unit"> cm</span>
+                </div>
+                
+                <div class="area-calculation">
+                    <div class="area-formula">面積 = 底邊 × 高</div>
+                    <div class="area-steps">
+                        高 = 側邊 × sin(角度)<br>
+                        高 = <span id="height-value">12</span> cm × sin(<span id="angle-value">60.0</span>°) = <span id="height-result">10.39</span> cm<br>
+                        面積 = <span id="base-value">15</span> cm × <span id="height-final">10.39</span> cm = <span id="info-area">155.88</span> cm²
+                    </div>
+                </div>
+            </div>
+            
+            <div class="properties-box">
+                <div class="info-title">平行四邊形特性</div>
+                <div class="property-item">
+                    <span class="property-label">對邊相等:</span>
+                    <span id="property-equal-sides" class="property-value">是</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">對角相等:</span>
+                    <span id="property-equal-angles" class="property-value">是</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">對角線互相平分:</span>
+                    <span id="property-diagonals-bisect" class="property-value">是</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">鄰角互補:</span>
+                    <span id="property-adjacent-angles" class="property-value">是</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">角度A:</span>
+                    <span id="angle-a-value" class="property-value">60.0°</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">角度B:</span>
+                    <span id="angle-b-value" class="property-value">120.0°</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">角度C:</span>
+                    <span id="angle-c-value" class="property-value">60.0°</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">角度D:</span>
+                    <span id="angle-d-value" class="property-value">120.0°</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="graph-container">
+            <svg id="parallelogram-svg" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+                <!-- 平行四邊形對角線 -->
+                <line id="diagonal1" class="diagonal" x1="0" y1="0" x2="0" y2="0" />
+                <line id="diagonal2" class="diagonal" x1="0" y1="0" x2="0" y2="0" />
+                
+                <!-- 平行四邊形邊 -->
+                <polygon id="parallelogram" fill="rgba(52, 152, 219, 0.3)" stroke="none" />
+                <line id="side1" class="side" x1="0" y1="0" x2="0" y2="0" />
+                <line id="side2" class="side" x1="0" y1="0" x2="0" y2="0" />
+                <line id="side3" class="side" x1="0" y1="0" x2="0" y2="0" />
+                <line id="side4" class="side" x1="0" y1="0" x2="0" y2="0" />
+                
+                <!-- 高度線 -->
+                <line id="height-line" class="diagonal" x1="0" y1="0" x2="0" y2="0" stroke="#e74c3c" stroke-width="2" />
+                <text id="height-text" class="length-text" x="0" y="0" fill="#e74c3c">高</text>
+                
+                <!-- 角度標示 -->
+                <text id="angle-text-a" class="angle-text" x="0" y="0">60.0°</text>
+                <text id="angle-text-b" class="angle-text" x="0" y="0">120.0°</text>
+                <text id="angle-text-c" class="angle-text" x="0" y="0">60.0°</text>
+                <text id="angle-text-d" class="angle-text" x="0" y="0">120.0°</text>
+                
+                <!-- 邊長標示 -->
+                <text id="bottom-base-text" class="length-text" x="0" y="0">a=15.0cm</text>
+                <text id="top-base-text" class="length-text" x="0" y="0">a=15.0cm</text>
+                <text id="right-side-text" class="length-text" x="0" y="0">b=12.0cm</text>
+                <text id="left-side-text" class="length-text" x="0" y="0">b=12.0cm</text>
+                
+                <!-- 對角線交點 -->
+                <circle id="diagonal-intersection" cx="0" cy="0" r="5" fill="#e67e22" />
+                <text id="diagonal-text" class="length-text" x="0" y="0" fill="#e67e22">O</text>
+                
+                <!-- 頂點 -->
+                <circle id="vertex1" class="vertex" cx="0" cy="0" r="6" />
+                <circle id="vertex2" class="vertex" cx="0" cy="0" r="6" />
+                <circle id="vertex3" class="vertex" cx="0" cy="0" r="6" />
+                <circle id="vertex4" class="vertex" cx="0" cy="0" r="6" />
+            </svg>
+            <div class="drag-hint">拖曳頂點可改變平行四邊形形狀</div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>動態平行四邊形編輯器 &copy; 2023 | 使用SVG繪製</p>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const svg = document.getElementById('parallelogram-svg');
+        const baseLengthSlider = document.getElementById('base-length');
+        const sideLengthSlider = document.getElementById('side-length');
+        const angleSlider = document.getElementById('angle');
+        
+        const baseLengthDisplay = document.getElementById('base-length-display');
+        const sideLengthDisplay = document.getElementById('side-length-display');
+        const angleDisplay = document.getElementById('angle-display');
+        
+        const infoBase = document.getElementById('info-base');
+        const infoSide = document.getElementById('info-side');
+        const infoAngle = document.getElementById('info-angle');
+        const infoArea = document.getElementById('info-area');
+        const infoPerimeter = document.getElementById('info-perimeter');
+        
+        // 属性显示元素
+        const propertyEqualSides = document.getElementById('property-equal-sides');
+        const propertyEqualAngles = document.getElementById('property-equal-angles');
+        const propertyDiagonalsBisect = document.getElementById('property-diagonals-bisect');
+        const propertyAdjacentAngles = document.getElementById('property-adjacent-angles');
+        const angleAValue = document.getElementById('angle-a-value');
+        const angleBValue = document.getElementById('angle-b-value');
+        const angleCValue = document.getElementById('angle-c-value');
+        const angleDValue = document.getElementById('angle-d-value');
+        
+        const resetBtn = document.getElementById('reset-btn');
+        const randomBtn = document.getElementById('random-btn');
+        const presetBtns = document.querySelectorAll('.preset-btn');
+        
+        // 面积计算元素
+        const heightValue = document.getElementById('height-value');
+        const angleValue = document.getElementById('angle-value');
+        const heightResult = document.getElementById('height-result');
+        const baseValue = document.getElementById('base-value');
+        const heightFinal = document.getElementById('height-final');
+        
+        // 平行四邊形元素
+        const parallelogram = document.getElementById('parallelogram');
+        const side1 = document.getElementById('side1');
+        const side2 = document.getElementById('side2');
+        const side3 = document.getElementById('side3');
+        const side4 = document.getElementById('side4');
+        const diagonal1 = document.getElementById('diagonal1');
+        const diagonal2 = document.getElementById('diagonal2');
+        
+        // 角度標示元素
+        const angleTextA = document.getElementById('angle-text-a');
+        const angleTextB = document.getElementById('angle-text-b');
+        const angleTextC = document.getElementById('angle-text-c');
+        const angleTextD = document.getElementById('angle-text-d');
+        
+        // 邊長標示元素
+        const bottomBaseText = document.getElementById('bottom-base-text');
+        const topBaseText = document.getElementById('top-base-text');
+        const rightSideText = document.getElementById('right-side-text');
+        const leftSideText = document.getElementById('left-side-text');
+        const heightLine = document.getElementById('height-line');
+        const heightText = document.getElementById('height-text');
+        
+        // 屬性標記元素
+        const diagonalIntersection = document.getElementById('diagonal-intersection');
+        const diagonalText = document.getElementById('diagonal-text');
+        
+        // 頂點元素
+        const vertex1 = document.getElementById('vertex1');
+        const vertex2 = document.getElementById('vertex2');
+        const vertex3 = document.getElementById('vertex3');
+        const vertex4 = document.getElementById('vertex4');
+        
+        // 初始化參數
+        let baseLength = 15; // 厘米
+        let sideLength = 12; // 厘米
+        let angle = 60; // 角度值
+        let isDragging = false;
+        let activeVertex = null;
+        let isMoving = false;
+        let startX, startY;
+        let offsetX = 0, offsetY = 0;
+        let currentX = 100, currentY = 200;
+        
+        // 厘米到像素的转换比例
+        const cmToPx = 10; // 1厘米 = 10像素
+        
+        // 更新平行四邊形
+        function updateParallelogram() {
+            // 將角度轉換為弧度
+            const angleRad = angle * Math.PI / 180;
+            
+            // 計算頂點坐標 (使用厘米轉像素)
+            const x1 = currentX + offsetX;
+            const y1 = currentY + offsetY;
+            const x2 = x1 + baseLength * cmToPx;
+            const y2 = y1;
+            const x3 = x2 + sideLength * cmToPx * Math.cos(angleRad);
+            const y3 = y2 - sideLength * cmToPx * Math.sin(angleRad);
+            const x4 = x1 + sideLength * cmToPx * Math.cos(angleRad);
+            const y4 = y1 - sideLength * cmToPx * Math.sin(angleRad);
+            
+            // 更新平行四邊形形狀
+            parallelogram.setAttribute('points', `${x1},${y1} ${x2},${y2} ${x3},${y3} ${x4},${y4}`);
+            
+            // 更新邊線
+            side1.setAttribute('x1', x1);
+            side1.setAttribute('y1', y1);
+            side1.setAttribute('x2', x2);
+            side1.setAttribute('y2', y2);
+            
+            side2.setAttribute('x1', x2);
+            side2.setAttribute('y1', y2);
+            side2.setAttribute('x2', x3);
+            side2.setAttribute('y2', y3);
+            
+            side3.setAttribute('x1', x3);
+            side3.setAttribute('y1', y3);
+            side3.setAttribute('x2', x4);
+            side3.setAttribute('y2', y4);
+            
+            side4.setAttribute('x1', x4);
+            side4.setAttribute('y1', y4);
+            side4.setAttribute('x2', x1);
+            side4.setAttribute('y2', y1);
+            
+            // 更新對角線
+            diagonal1.setAttribute('x1', x1);
+            diagonal1.setAttribute('y1', y1);
+            diagonal1.setAttribute('x2', x3);
+            diagonal1.setAttribute('y2', y3);
+            
+            diagonal2.setAttribute('x1', x2);
+            diagonal2.setAttribute('y1', y2);
+            diagonal2.setAttribute('x2', x4);
+            diagonal2.setAttribute('y2', y4);
+            
+            // 更新高度線
+            heightLine.setAttribute('x1', x4);
+            heightLine.setAttribute('y1', y4);
+            heightLine.setAttribute('x2', x4);
+            heightLine.setAttribute('y2', y1);
+            
+            heightText.setAttribute('x', x4 - 15);
+            heightText.setAttribute('y', (y1 + y4) / 2);
+            
+            // 更新頂點位置
+            vertex1.setAttribute('cx', x1);
+            vertex1.setAttribute('cy', y1);
+            vertex2.setAttribute('cx', x2);
+            vertex2.setAttribute('cy', y2);
+            vertex3.setAttribute('cx', x3);
+            vertex3.setAttribute('cy', y3);
+            vertex4.setAttribute('cx', x4);
+            vertex4.setAttribute('cy', y4);
+            
+            // 更新角度標示
+            updateAngleMarks(x1, y1, x2, y2, x3, y3, x4, y4, angleRad);
+            
+            // 更新邊長標示
+            updateSideLengthMarks(x1, y1, x2, y2, x3, y3, x4, y4, angleRad);
+            
+            // 更新對角線交點
+            updateDiagonalIntersection(x1, y1, x2, y2, x3, y3, x4, y4);
+            
+            // 更新信息顯示
+            updateInfo();
+            
+            // 更新平行四邊形屬性
+            updateProperties();
+        }
+        
+        // 更新角度標示 - 只顯示文字，不顯示弧線
+        function updateAngleMarks(x1, y1, x2, y2, x3, y3, x4, y4, angleRad) {
+            const offset = 25; // 角度文字與頂點的距離
+            
+            // 角度A (在頂點A處)
+            angleTextA.setAttribute('x', x1 + offset);
+            angleTextA.setAttribute('y', y1 - 5);
+            angleTextA.textContent = `${angle.toFixed(1)}°`;
+            
+            // 角度B (在頂點B處)
+            const angleB = 180 - angle;
+            angleTextB.setAttribute('x', x2 - offset);
+            angleTextB.setAttribute('y', y2 - 5);
+            angleTextB.textContent = `${angleB.toFixed(1)}°`;
+            
+            // 角度C (在頂點C處)
+            angleTextC.setAttribute('x', x3 - offset);
+            angleTextC.setAttribute('y', y3 + 15);
+            angleTextC.textContent = `${angle.toFixed(1)}°`;
+            
+            // 角度D (在頂點D處)
+            const angleD = 180 - angle;
+            angleTextD.setAttribute('x', x4 + offset);
+            angleTextD.setAttribute('y', y4 + 15);
+            angleTextD.textContent = `${angleD.toFixed(1)}°`;
+        }
+        
+        // 更新邊長標示 - 進一步修正左側邊的顯示位置
+        function updateSideLengthMarks(x1, y1, x2, y2, x3, y3, x4, y4, angleRad) {
+            const offset = 35; // 標示與邊的距離
+            
+            // 底邊標示 (a=baseLength) - 顯示在下方
+            const bottomBaseMidX = (x1 + x2) / 2;
+            const bottomBaseMidY = (y1 + y2) / 2;
+            bottomBaseText.setAttribute('x', bottomBaseMidX);
+            bottomBaseText.setAttribute('y', bottomBaseMidY + offset);
+            bottomBaseText.textContent = `a=${baseLength.toFixed(1)}cm`;
+            
+            // 上方邊標示 (a=baseLength) - 顯示在上方
+            const topBaseMidX = (x3 + x4) / 2;
+            const topBaseMidY = (y3 + y4) / 2;
+            topBaseText.setAttribute('x', topBaseMidX);
+            topBaseText.setAttribute('y', topBaseMidY - offset);
+            topBaseText.textContent = `a=${baseLength.toFixed(1)}cm`;
+            
+            // 右側邊標示 (b=sideLength)
+            const rightSideMidX = (x2 + x3) / 2;
+            const rightSideMidY = (y2 + y3) / 2;
+            // 計算垂直於右側邊的方向向量
+            const rightSideAngle = Math.atan2(y3 - y2, x3 - x2);
+            const rightPerpendicularAngle = rightSideAngle + Math.PI / 2;
+            const rightTextX = rightSideMidX + Math.cos(rightPerpendicularAngle) * offset;
+            const rightTextY = rightSideMidY + Math.sin(rightPerpendicularAngle) * offset;
+            
+            rightSideText.setAttribute('x', rightTextX);
+            rightSideText.setAttribute('y', rightTextY);
+            rightSideText.textContent = `b=${sideLength.toFixed(1)}cm`;
+            
+            // 左側邊標示 (b=sideLength) - 進一步向左平移，確保在圖形外部
+            const leftSideMidX = (x4 + x1) / 2;
+            const leftSideMidY = (y4 + y1) / 2;
+            
+            // 進一步向左平移，確保完全在圖形外部
+            const leftOffset = 80; // 大幅增加偏移量
+            leftSideText.setAttribute('x', leftSideMidX - leftOffset);
+            leftSideText.setAttribute('y', leftSideMidY);
+            leftSideText.textContent = `b=${sideLength.toFixed(1)}cm`;
+        }
+        
+        // 更新對角線交點
+        function updateDiagonalIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
+            // 計算對角線交點 (平行四邊形對角線互相平分)
+            const intersectionX = (x1 + x3) / 2;
+            const intersectionY = (y1 + y3) / 2;
+            
+            diagonalIntersection.setAttribute('cx', intersectionX);
+            diagonalIntersection.setAttribute('cy', intersectionY);
+            
+            diagonalText.setAttribute('x', intersectionX + 10);
+            diagonalText.setAttribute('y', intersectionY - 10);
+            diagonalText.textContent = 'O';
+        }
+        
+        // 更新信息顯示
+        function updateInfo() {
+            infoBase.textContent = baseLength.toFixed(1);
+            infoSide.textContent = sideLength.toFixed(1);
+            infoAngle.textContent = angle.toFixed(1);
+            
+            // 計算面積 (底邊 * 高) - 单位是平方厘米
+            const height = sideLength * Math.sin(angle * Math.PI / 180);
+            const area = baseLength * height;
+            infoArea.textContent = area.toFixed(2);
+            
+            // 更新面积计算步骤
+            heightValue.textContent = sideLength.toFixed(1);
+            angleValue.textContent = angle.toFixed(1);
+            heightResult.textContent = height.toFixed(2);
+            baseValue.textContent = baseLength.toFixed(1);
+            heightFinal.textContent = height.toFixed(2);
+            
+            // 計算周長 - 单位是厘米
+            const perimeter = 2 * (baseLength + sideLength);
+            infoPerimeter.textContent = perimeter.toFixed(1);
+        }
+        
+        // 更新平行四邊形屬性
+        function updateProperties() {
+            // 對邊相等 - 在平行四邊形中總是成立
+            propertyEqualSides.textContent = "是";
+            
+            // 對角相等 - 在平行四邊形中總是成立
+            propertyEqualAngles.textContent = "是";
+            
+            // 對角線互相平分 - 在平行四邊形中總是成立
+            propertyDiagonalsBisect.textContent = "是";
+            
+            // 鄰角互補 - 在平行四邊形中總是成立
+            propertyAdjacentAngles.textContent = "是";
+            
+            // 更新角度值
+            angleAValue.textContent = `${angle.toFixed(1)}°`;
+            angleBValue.textContent = `${(180 - angle).toFixed(1)}°`;
+            angleCValue.textContent = `${angle.toFixed(1)}°`;
+            angleDValue.textContent = `${(180 - angle).toFixed(1)}°`;
+        }
+        
+        // 更新滑塊和顯示值
+        function updateSliders() {
+            baseLengthSlider.value = baseLength;
+            sideLengthSlider.value = sideLength;
+            angleSlider.value = angle;
+            
+            baseLengthDisplay.textContent = `${baseLength.toFixed(1)} cm`;
+            sideLengthDisplay.textContent = `${sideLength.toFixed(1)} cm`;
+            angleDisplay.textContent = `${angle.toFixed(1)}°`;
+        }
+        
+        // 重置為默認值
+        function resetToDefault() {
+            baseLength = 15;
+            sideLength = 12;
+            angle = 60;
+            offsetX = 0;
+            offsetY = 0;
+            updateSliders();
+            updateParallelogram();
+        }
+        
+        // 生成隨機範例
+        function generateRandomExample() {
+            baseLength = (Math.random() * 25 + 5).toFixed(1);
+            sideLength = (Math.random() * 25 + 5).toFixed(1);
+            angle = (Math.floor(Math.random() * 150) + 20).toFixed(1);
+            updateSliders();
+            updateParallelogram();
+        }
+        
+        // 處理頂點拖拽
+        function startDrag(vertex) {
+            isDragging = true;
+            activeVertex = vertex;
+            activeVertex.classList.add('active');
+        }
+        
+        function drag(e) {
+            if (!isDragging || !activeVertex) return;
+            
+            const svgRect = svg.getBoundingClientRect();
+            const x = e.clientX - svgRect.left;
+            const y = e.clientY - svgRect.top;
+            
+            // 根據拖拽的頂點更新平行四邊形
+            if (activeVertex.id === 'vertex2') {
+                baseLength = (x - (currentX + offsetX)) / cmToPx;
+                if (baseLength < 5) baseLength = 5;
+                if (baseLength > 30) baseLength = 30;
+            } else if (activeVertex.id === 'vertex4') {
+                const dx = x - (currentX + offsetX);
+                const dy = (currentY + offsetY) - y;
+                sideLength = Math.sqrt(dx*dx + dy*dy) / cmToPx;
+                if (sideLength < 5) sideLength = 5;
+                if (sideLength > 30) sideLength = 30;
+                
+                // 計算角度
+                angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                if (angle < 10) angle = 10;
+                if (angle > 170) angle = 170;
+            } else if (activeVertex.id === 'vertex3') {
+                const dx = x - (currentX + offsetX + baseLength * cmToPx);
+                const dy = (currentY + offsetY) - y;
+                sideLength = Math.sqrt(dx*dx + dy*dy) / cmToPx;
+                if (sideLength < 5) sideLength = 5;
+                if (sideLength > 30) sideLength = 30;
+                
+                // 計算角度
+                angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                if (angle < 10) angle = 10;
+                if (angle > 170) angle = 170;
+            }
+            
+            updateSliders();
+            updateParallelogram();
+        }
+        
+        function endDrag() {
+            if (activeVertex) {
+                activeVertex.classList.remove('active');
+            }
+            isDragging = false;
+            activeVertex = null;
+        }
+        
+        // 處理圖形平移
+        function startMove(e) {
+            if (e.target.id === 'parallelogram-svg' || e.target.id === 'parallelogram') {
+                isMoving = true;
+                startX = e.clientX - offsetX;
+                startY = e.clientY - offsetY;
+                svg.style.cursor = 'grabbing';
+            }
+        }
+        
+        function move(e) {
+            if (!isMoving) return;
+            
+            offsetX = e.clientX - startX;
+            offsetY = e.clientY - startY;
+            
+            updateParallelogram();
+        }
+        
+        function endMove() {
+            isMoving = false;
+            svg.style.cursor = 'move';
+        }
+        
+        // 事件監聽
+        baseLengthSlider.addEventListener('input', function() {
+            baseLength = parseFloat(this.value);
+            updateSliders();
+            updateParallelogram();
+        });
+        
+        sideLengthSlider.addEventListener('input', function() {
+            sideLength = parseFloat(this.value);
+            updateSliders();
+            updateParallelogram();
+        });
+        
+        angleSlider.addEventListener('input', function() {
+            angle = parseFloat(this.value);
+            updateSliders();
+            updateParallelogram();
+        });
+        
+        resetBtn.addEventListener('click', resetToDefault);
+        randomBtn.addEventListener('click', generateRandomExample);
+        
+        // 預設範例按鈕
+        presetBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                baseLength = parseFloat(this.dataset.base);
+                sideLength = parseFloat(this.dataset.side);
+                angle = parseFloat(this.dataset.angle);
+                updateSliders();
+                updateParallelogram();
+            });
+        });
+        
+        // 頂點拖拽事件
+        vertex1.addEventListener('mousedown', () => startDrag(vertex1));
+        vertex2.addEventListener('mousedown', () => startDrag(vertex2));
+        vertex3.addEventListener('mousedown', () => startDrag(vertex3));
+        vertex4.addEventListener('mousedown', () => startDrag(vertex4));
+        
+        svg.addEventListener('mousemove', (e) => {
+            if (isDragging) drag(e);
+            if (isMoving) move(e);
+        });
+        
+        svg.addEventListener('mouseup', () => {
+            endDrag();
+            endMove();
+        });
+        
+        svg.addEventListener('mouseleave', () => {
+            endDrag();
+            endMove();
+        });
+        
+        svg.addEventListener('mousedown', startMove);
+        
+        // 初始化
+        updateSliders();
+        updateParallelogram();
+    </script>
+</body>
+</html>
