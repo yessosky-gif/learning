@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>信用卡還款模擬器-666</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", -apple-system, sans-serif; background-color: #f9f9f9; padding: 10px; color: #333; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #b22222; border-bottom: 2px solid #b22222; padding-bottom: 10px; font-size: 1.5rem; margin-bottom: 20px; }
+        
+        /* 輸入區域適配 */
+        .input-section { display: flex; gap: 10px; margin-bottom: 20px; background: #fff5f5; padding: 15px; border-radius: 8px; flex-wrap: wrap; }
+        .field { flex: 1; min-width: 140px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; -webkit-appearance: none; box-sizing: border-box; }
+        
+        button { width: 100%; padding: 15px; background: #b22222; color: white; border: none; border-radius: 6px; font-size: 18px; cursor: pointer; font-weight: bold; }
+        button:active { background: #8b0000; transform: scale(0.98); }
+        
+        .summary-text { margin: 20px 0; padding: 15px; background: #e9f7fe; border-radius: 8px; font-size: 15px; border-left: 5px solid #31708f; }
+
+        /* 同步滾動容器結構 */
+        .result-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 768px) { .result-grid { grid-template-columns: 1fr 1fr; } }
+
+        .box { border: 1px solid #ddd; border-radius: 8px; background: #fff; overflow: hidden; display: flex; flex-direction: column; }
+        .box h3 { margin: 0; padding: 12px; font-size: 1rem; border-bottom: 1px solid #eee; text-align: center; }
+        
+        /* 滾動區域 - 核心 CSS */
+        .table-scroll-area { 
+            max-height: 450px; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+        
+        /* 固定表頭 */
+        thead th { 
+            position: sticky; 
+            top: 0; 
+            background: #f4f4f4; 
+            z-index: 10; 
+            padding: 12px 5px;
+            border-bottom: 1px solid #ddd;
+            font-weight: bold;
+        }
+        
+        td { border-bottom: 1px solid #eee; padding: 12px 5px; text-align: right; word-break: break-all; }
+        
+        .highlight-red { color: #d9534f; font-weight: bold; }
+        .highlight-blue { color: #31708f; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>信用卡還款模擬器-by yessosky</h2>
+    
+    <div class="input-section">
+        <div class="field">
+            <label>初始欠款</label>
+            <input type="number" id="principal" value="100000">
+        </div>
+        <div class="field">
+            <label>年利率 (%)</label>
+            <input type="number" id="annualRate" value="28.8" step="0.1">
+        </div>
+        <div class="field">
+            <label>最低還款 (%)</label>
+            <input type="number" id="minPayPercent" value="3" step="0.1">
+        </div>
+        <div class="field">
+            <label>時間 (月)</label>
+            <input type="number" id="months" value="12">
+        </div>
+    </div>
+    
+    <button onclick="runSimulation()">開始計算</button>
+
+    <div id="results" style="display:none;">
+        <div class="summary-text" id="summary"></div>
+        
+        <div class="result-grid">
+            <div class="box">
+                <h3 style="background:#fff5f5; color:#d9534f">情況 A：完全不還款</h3>
+                <div class="table-scroll-area" id="scrollA">
+                    <table id="tableA">
+                        <thead>
+                            <tr>
+                                <th width="20%">月份</th>
+                                <th width="25%">利息</th>
+                                <th width="25%">手續費</th>
+                                <th width="30%">總欠款</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="box">
+                <h3 style="background:#f0faff; color:#31708f">情況 B：只還最低額</h3>
+                <div class="table-scroll-area" id="scrollB">
+                    <table id="tableB">
+                        <thead>
+                            <tr>
+                                <th width="20%">月份</th>
+                                <th width="25%">利息</th>
+                                <th width="25%">還款額</th>
+                                <th width="30%">餘下欠款</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 同步滾動核心邏輯
+const scrollA = document.getElementById('scrollA');
+const scrollB = document.getElementById('scrollB');
+
+function syncScroll(e) {
+    if (e.target === scrollA) {
+        scrollB.scrollTop = scrollA.scrollTop;
+    } else {
+        scrollA.scrollTop = scrollB.scrollTop;
+    }
+}
+
+scrollA.addEventListener('scroll', syncScroll);
+scrollB.addEventListener('scroll', syncScroll);
+
+function runSimulation() {
+    const startP = parseFloat(document.getElementById('principal').value);
+    const annualRateInput = parseFloat(document.getElementById('annualRate').value) / 100;
+    const minPayRate = parseFloat(document.getElementById('minPayPercent').value) / 100;
+    const months = parseInt(document.getElementById('months').value);
+    const dailyRate = annualRateInput / 365;
+    const daysInMonth = 30; 
+    const lateFeeRate = 0.05;
+
+    document.getElementById('results').style.display = 'block';
+
+    let balA = startP;
+    let balB = startP;
+    let totalPaidB = 0;
+
+    const tbodyA = document.querySelector('#tableA tbody');
+    const tbodyB = document.querySelector('#tableB tbody');
+    tbodyA.innerHTML = '';
+    tbodyB.innerHTML = '';
+
+    for(let m=1; m<=months; m++) {
+        // A 情況：每日計息
+        let monthlyIntA = 0;
+        for(let d=1; d<=daysInMonth; d++) { monthlyIntA += balA * dailyRate; }
+        let lateFee = Math.min((balA + monthlyIntA) * minPayRate * lateFeeRate, 80);
+        balA += (monthlyIntA + lateFee);
+
+        tbodyA.innerHTML += `<tr>
+            <td style="text-align:center">${m}</td>
+            <td>${monthlyIntA.toFixed(1)}</td>
+            <td>${lateFee.toFixed(1)}</td>
+            <td class="highlight-red">${balA.toFixed(0)}</td>
+        </tr>`;
+
+        // B 情況：每日計息
+        let monthlyIntB = 0;
+        for(let d=1; d<=daysInMonth; d++) { monthlyIntB += balB * dailyRate; }
+        let minPay = (balB + monthlyIntB) * minPayRate;
+        balB = (balB + monthlyIntB) - minPay;
+        totalPaidB += minPay;
+
+        tbodyB.innerHTML += `<tr>
+            <td style="text-align:center">${m}</td>
+            <td>${monthlyIntB.toFixed(1)}</td>
+            <td>${minPay.toFixed(1)}</td>
+            <td class="highlight-blue">${balB.toFixed(0)}</td>
+        </tr>`;
+    }
+
+    document.getElementById('summary').innerHTML = `
+        <strong>模擬總結：</strong><br>
+        不還款總欠額：<span class="highlight-red">${balA.toLocaleString(undefined, {maximumFractionDigits:0})}</span><br>
+        只還最低總欠額：<span class="highlight-blue">${balB.toLocaleString(undefined, {maximumFractionDigits:0})}</span> (累計已繳：${totalPaidB.toFixed(0)})
+    `;
+    
+    // 重置滾動位置
+    scrollA.scrollTop = 0;
+    scrollB.scrollTop = 0;
+}
+</script>
+
+</body>
+</html>
