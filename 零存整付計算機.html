@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>零存整付計算機 - 小志方案試算</title>
+    <style>
+        :root {
+            --primary-dark: #2c3e50;
+            --bg-light: #f4f7f6;
+            --accent-green: #27ae60;
+            --card-bg: #ffffff;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .calculator-card {
+            background: var(--card-bg);
+            width: 95%;
+            max-width: 650px;
+            height: 92vh;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 15px 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header { flex-shrink: 0; margin-bottom: 10px; }
+        .header h1 { color: var(--primary-dark); font-size: 20px; margin: 0; }
+        .sub-header { font-size: 11px; color: #7f8c8d; border-left: 3px solid var(--accent-green); padding-left: 8px; margin-top: 4px; }
+
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; flex-shrink: 0; }
+        .input-group label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; color: #34495e; }
+        .input-group input { 
+            width: 100%; padding: 10px; border: 2px solid #dce4ec; 
+            border-radius: 10px; font-size: 15px; outline: none; background: #fff;
+        }
+        .input-group input:focus { border-color: var(--accent-green); }
+
+        .calc-btn {
+            background-color: var(--accent-green); color: white; border: none; width: 100%; 
+            padding: 12px; border-radius: 12px; font-size: 16px; font-weight: bold; 
+            cursor: pointer; margin-bottom: 12px; flex-shrink: 0; transition: transform 0.1s;
+        }
+        .calc-btn:active { transform: scale(0.98); }
+
+        .result-panel { 
+            background: #f0f9f4; border-radius: 15px; padding: 12px 18px; 
+            border: 1px solid #c2eabd; flex-shrink: 0;
+        }
+        .res-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .fv-value { font-size: 24px; font-weight: bold; color: var(--accent-green); }
+        .res-value { font-size: 15px; font-weight: bold; color: #2c3e50; }
+
+        .schedule-header { 
+            background: #d5e8d4; padding: 8px 15px; border-radius: 12px 12px 0 0; 
+            margin-top: 10px; font-size: 12px; font-weight: bold; color: #2e7d32;
+            flex-shrink: 0;
+        }
+        .schedule-container {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #d5e8d4;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            background: #fff;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { position: sticky; top: 0; background: #f8fbf8; padding: 10px 5px; z-index: 10; border-bottom: 1px solid #eee; text-align: center; }
+        td { padding: 8px 5px; text-align: right; border-bottom: 1px solid #f1f1f1; }
+        .td-center { text-align: center; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+<div class="calculator-card">
+    <div class="header">
+        <h1>📈 零存整付計算機-by yessosky (期初年金)</h1>
+        <div class="sub-header">案例模擬：小志方案 3 (每月初存入 $5000)</div>
+    </div>
+
+    <div class="input-grid">
+        <div class="input-group">
+            <label>💰 每月存款 ($)</label>
+            <input type="number" id="pmt" value="5000">
+        </div>
+        <div class="input-group">
+            <label>📉 年利率 (%)</label>
+            <input type="number" id="r" step="0.1" value="3">
+        </div>
+        <div class="input-group">
+            <label>⏳ 存款期 (月)</label>
+            <input type="number" id="n" value="60">
+        </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">🚀 計算結果</button>
+
+    <div class="result-panel" id="resultPanel">
+        </div>
+
+    <div class="schedule-header">📅 財富增長明細 (複利滾動過程)</div>
+    <div class="schedule-container" id="scheduleCont">
+        </div>
+</div>
+
+<script>
+    function calculate() {
+        const PMT = parseFloat(document.getElementById('pmt').value);
+        const AR = parseFloat(document.getElementById('r').value);
+        const N = parseInt(document.getElementById('n').value);
+
+        if(!PMT || !AR || !N) return;
+
+        const i = AR / 100 / 12; // 月利率
+        
+        // 期初年金終值公式
+        const FV = PMT * ((Math.pow(1 + i, N) - 1) / i) * (1 + i);
+        const totalPrincipal = PMT * N;
+        const totalInterest = FV - totalPrincipal;
+
+        // 更新結果面板
+        document.getElementById('resultPanel').innerHTML = `
+            <div class="res-row" style="border-bottom: 1px solid #c2eabd; padding-bottom: 6px;">
+                <span style="font-size:13px;">💰 最終預期總額 (FV)</span>
+                <span class="fv-value">$${FV.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+            </div>
+            <div class="res-row" style="margin-top:8px;"><span>🏦 累計投入本金</span><span class="res-value">$${totalPrincipal.toLocaleString()}</span></div>
+            <div class="res-row"><span>🧧 累計賺取利息</span><span class="res-value" style="color: #27ae60;">$${totalInterest.toLocaleString(undefined, {maximumFractionDigits: 0})}</span></div>
+        `;
+
+        // 生成明細表
+        let runningBalance = 0;
+        let tableHtml = '<table><thead><tr><th style="width:45px">期數</th><th>期初存款</th><th>當期利息</th><th>期末餘額</th></tr></thead><tbody>';
+        
+        for (let k = 1; k <= N; k++) {
+            let startBalance = runningBalance + PMT;
+            let currentInterest = startBalance * i;
+            runningBalance = startBalance + currentInterest;
+
+            tableHtml += `<tr>
+                <td class="td-center">${k}</td>
+                <td>${PMT.toLocaleString()}</td>
+                <td style="color:#27ae60">+${currentInterest.toFixed(2)}</td>
+                <td style="font-weight:bold;">${runningBalance.toLocaleString(undefined, {maximumFractionDigits: 2})}</td>
+            </tr>`;
+        }
+        
+        tableHtml += '</tbody></table>';
+        document.getElementById('scheduleCont').innerHTML = tableHtml;
+    }
+
+    // 頁面載入後自動執行一次
+    window.onload = calculate;
+</script>
+
+</body>
+</html>
