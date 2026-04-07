@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>供樓計算機999 - 全顯優化版</title>
+    <style>
+        :root {
+            --primary-dark: #1a5260;
+            --bg-light: #eef5f9;
+            --accent-blue: #3498db;
+            --card-bg: #ffffff;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* 鎖定視窗高度 */
+            width: 100vw;
+            overflow: hidden; /* 禁止全頁捲動 */
+        }
+
+        .calculator-card {
+            background: var(--card-bg);
+            width: 95%;
+            max-width: 650px;
+            height: 92vh; /* 卡片高度佔螢幕 92% */
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column; /* 垂直排列 */
+        }
+
+        .header-section { flex-shrink: 0; margin-bottom: 8px; }
+        .header-section h1 { color: var(--primary-dark); font-size: 18px; margin: 0; display: inline-block; }
+        .sub-header { font-size: 11px; color: #7f8c8d; margin-left: 8px; display: inline-block; }
+
+        /* 輸入區：更加緊湊 */
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; flex-shrink: 0; }
+        .full-width { grid-column: 1 / -1; }
+        .input-group label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 2px; color: #34495e; }
+        .input-group input { 
+            width: 100%; padding: 6px 10px; border: 1.5px solid #dce4ec; 
+            border-radius: 8px; font-size: 14px; outline: none; 
+        }
+
+        .calc-btn {
+            background-color: var(--primary-dark); color: white; border: none; width: 100%; 
+            padding: 10px; border-radius: 12px; font-size: 15px; font-weight: bold; 
+            cursor: pointer; margin-bottom: 10px; flex-shrink: 0;
+        }
+
+        /* 結果面板：縮小字體 */
+        .result-panel { 
+            background: #f1f7fa; border-radius: 15px; padding: 10px 15px; 
+            border: 1px solid #d0e0eb; flex-shrink: 0;
+        }
+        .res-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .emi-value { font-size: 20px; font-weight: bold; color: var(--primary-dark); }
+        .res-value { font-size: 13px; font-weight: bold; }
+        
+        .dsr-box { background: rgba(255,255,255,0.8); border-radius: 10px; padding: 6px 12px; margin-top: 5px; font-size: 11px; }
+        .dsr-status { font-weight: bold; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+
+        /* 明細表區域：自動填滿剩餘高度並滾動 */
+        .schedule-header { 
+            background: #d1e1eb; padding: 6px 12px; border-radius: 12px 12px 0 0; 
+            margin-top: 10px; font-size: 12px; font-weight: bold; color: var(--primary-dark);
+            flex-shrink: 0;
+        }
+        .schedule-container {
+            flex: 1; /* 核心：自動佔用剩餘的所有空間 */
+            overflow-y: auto; /* 允許內部滾動 */
+            border: 1px solid #d1e1eb;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            background: #fff;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        th { position: sticky; top: 0; background: #f8f9fa; padding: 8px 4px; z-index: 10; border-bottom: 1px solid #eee; text-align: center; }
+        td { padding: 6px 4px; text-align: right; border-bottom: 1px solid #f1f1f1; }
+        .td-center { text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="calculator-card">
+    <div class="header-section">
+        <h1>📁 供樓·供車計算機999-by yessosky</h1>
+        <div class="sub-header">全屏一體版</div>
+    </div>
+
+    <div class="input-grid">
+        <div class="input-group"><label>💰 貸款金額</label><input type="number" id="p" value="3000000"></div>
+        <div class="input-group"><label>📉 利率 (%)</label><input type="number" id="r" step="0.1" value="3.5"></div>
+        <div class="input-group"><label>⏳ 年期</label><input type="number" id="y" value="30"></div>
+        <div class="input-group full-width"><label>👨‍💼 每月收入 ($)</label><input type="number" id="inc" value="60000"></div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">🗓️ 立即計算</button>
+
+    <div class="result-panel">
+        <div class="res-row" style="border-bottom: 1px solid #c8d6e5; padding-bottom: 4px;">
+            <span style="font-size:12px;">📌 每月還款</span>
+            <span class="emi-value" id="res_emi">0</span>
+        </div>
+        <div class="res-row" style="margin-top:6px;"><span>💹 總利息支出</span><span class="res-value" id="res_totalInt">0</span></div>
+        <div class="res-row"><span>🏛️ 本息總額</span><span class="res-value" id="res_totalAll">0</span></div>
+
+        <div class="dsr-box">
+            <div class="res-row"><span>📋 DSR 比率 (供款/月入)</span><span id="res_dsrPerc" style="font-weight:bold">0%</span></div>
+            <div id="dsr_check" class="dsr-status">✅ 符合要求</div>
+        </div>
+    </div>
+
+    <div class="schedule-header">📅 還款明細 (期數/還款/利息/本金/餘額)</div>
+    <div class="schedule-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:35px">期數</th>
+                    <th>還款額</th>
+                    <th>利息</th>
+                    <th>本金</th>
+                    <th>剩餘本金</th>
+                </tr>
+            </thead>
+            <tbody id="scheduleBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function calculate() {
+        const P = parseFloat(document.getElementById('p').value);
+        const AR = parseFloat(document.getElementById('r').value);
+        const Y = parseFloat(document.getElementById('y').value);
+        const Inc = parseFloat(document.getElementById('inc').value);
+
+        if(!P || !AR || !Y) return;
+
+        const mr = AR / 100 / 12;
+        const n = Y * 12;
+        const x = (P * mr * Math.pow(1 + mr, n)) / (Math.pow(1 + mr, n) - 1);
+        
+        document.getElementById('res_emi').innerText = x.toLocaleString(undefined, {maximumFractionDigits: 0});
+        document.getElementById('res_totalInt').innerText = (x*n - P).toLocaleString(undefined, {maximumFractionDigits: 0});
+        document.getElementById('res_totalAll').innerText = (x*n).toLocaleString(undefined, {maximumFractionDigits: 0});
+        
+        const dsr = (x / Inc) * 100;
+        document.getElementById('res_dsrPerc').innerText = dsr.toFixed(1) + "%";
+        const dsrCheck = document.getElementById('dsr_check');
+        dsrCheck.innerHTML = dsr <= 50 ? "✅ 符合基本DSR要求≤50%" : "⚠️ DSR 超標 (>50%)，銀行可能要求增加擔保人或縮短還款期";
+        dsrCheck.style.color = dsr <= 50 ? "#27ae60" : "#e74c3c";
+
+        let rem = P;
+        let h = '';
+        for (let i = 1; i <= n; i++) {
+            let intM = rem * mr;
+            let priM = x - intM;
+            rem -= priM;
+            h += `<tr>
+                <td class="td-center" style="background:#fcfcfc;">${i}</td>
+                <td style="font-weight:bold;">${x.toFixed(0)}</td>
+                <td style="color:#e74c3c">${intM.toFixed(0)}</td>
+                <td style="color:#27ae60">${priM.toFixed(0)}</td>
+                <td>${Math.max(0,rem).toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+            </tr>`;
+        }
+        document.getElementById('scheduleBody').innerHTML = h;
+    }
+    window.onload = calculate;
+</script>
+
+</body>
+</html>
