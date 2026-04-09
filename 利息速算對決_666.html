@@ -221,8 +221,8 @@
         const val = parseFloat(currentInput);
         const msgEl = document.getElementById('msg' + p);
         
-        // 考量到大額數字，容許誤差保持在 0.05 內
-        if (Math.abs(val - targetVal) <= 0.05) {
+        // 考量到大額數字，容許誤差保持在 0.1 內
+        if (Math.abs(val - targetVal) <= 0.1) {
             locked = true; clearInterval(timerInt);
             if (p === 'A') { sA++; document.getElementById('scoreA').innerText = sA; }
             else { sB++; document.getElementById('scoreB').innerText = sB; }
