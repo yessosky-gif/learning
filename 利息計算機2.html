@@ -290,7 +290,7 @@
                 methodDetail = `📐 單利公式：本利和 = ${formatMoney(principal)} × (1 + ${ratePercent/100} × ${years}) = ${formatMoney(amount)}`;
             } 
             else if (interestType === "continuous") {
-                amount = principal * Math.exp(r * years);
+                amount = principal * * (2.718 ** (r * years));
                 interest = amount - principal;
                 freqText = "連續複利";
                 methodDetail = `📐 連續複利公式：本利和 = ${formatMoney(principal)} × 2.718^(${r}×${years}) = ${formatMoney(amount)}`;
