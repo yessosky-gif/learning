@@ -293,7 +293,7 @@
                 amount = principal * Math.exp(r * years);
                 interest = amount - principal;
                 freqText = "連續複利";
-                methodDetail = `📐 連續複利公式：本利和 = ${formatMoney(principal)} × e^(${r}×${years}) = ${formatMoney(amount)}`;
+                methodDetail = `📐 連續複利公式：本利和 = ${formatMoney(principal)} × 2.718^(${r}×${years}) = ${formatMoney(amount)}`;
             }
             else {
                 let m = 1;
