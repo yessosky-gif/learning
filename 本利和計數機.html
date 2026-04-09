@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>💰 單利·複利計算機 | 理財工具 (觸控鍵盤版)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            user-select: none; /* 避免觸控時選中文字，提升體驗 */
+        }
+        body {
+            background: linear-gradient(145deg, #e6f0f9 0%, #d0e2f0 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 12px;
+        }
+        .calculator-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+            border-radius: 28px;
+            box-shadow: 0 20px 35px -10px rgba(0, 40, 65, 0.3), 0 0 0 1px rgba(255,255,255,0.7) inset;
+            width: 100%;
+            max-width: 680px;          /* 稍加寬度容納鍵盤 */
+            padding: 16px 20px;
+        }
+        h2 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin: 0 0 2px 0;
+            background: linear-gradient(135deg, #0f4c5c, #1f6e8a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        h2::after {
+            content: "⚡";
+            font-size: 1.7rem;
+            color: #e6a31e;
+        }
+        .subhead {
+            font-size: 0.75rem;
+            color: #1e5a77;
+            margin-bottom: 12px;
+            border-left: 4px solid #3b9cbc;
+            padding-left: 12px;
+            background: #e5f0fb70;
+            border-radius: 0 14px 14px 0;
+            line-height: 1.3;
+        }
+        .input-group {
+            margin-bottom: 10px;
+        }
+        label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #0f4057;
+            display: block;
+            margin-bottom: 3px;
+            letter-spacing: 0.3px;
+        }
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;       /* 加大觸控區域 */
+            font-size: 1rem;
+            border: 2px solid #bfd7e9;
+            border-radius: 28px;
+            background: white;
+            outline: none;
+            transition: 0.1s;
+            /* 觸控時禁用系統鍵盤彈出，但保留手動輸入可能性，我們提供自定義鍵盤 */
+        }
+        .input-field:focus {
+            border-color: #1f7a9e;
+            box-shadow: 0 2px 6px rgba(31,122,158,0.1);
+        }
+        .select-custom {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 1rem;
+            border: 2px solid #bfd7e9;
+            border-radius: 28px;
+            background: white url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="%231f7a9e" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>') no-repeat right 16px center;
+            background-size: 14px;
+            appearance: none;
+            -webkit-appearance: none;
+            color: #0b2c3d;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .example-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 12px 0 12px;
+            flex-wrap: wrap;
+        }
+        .example-btn {
+            background: #d5e8fa;
+            border: 1px solid #8eb8d4;
+            border-radius: 40px;
+            padding: 8px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #0e3f57;
+            cursor: pointer;
+            transition: 0.1s;
+            white-space: nowrap;
+            touch-action: manipulation;
+        }
+        .example-btn:active {
+            transform: scale(0.96);
+            background: #c2def7;
+        }
+        button {
+            width: 100%;
+            background: #0f4c5c;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding: 12px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 6px 12px -5px #0f4c5cb0;
+            margin: 8px 0 12px 0;
+            border: 1px solid #ffffff70;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            touch-action: manipulation;
+        }
+        button:active {
+            transform: scale(0.98);
+            background: #1b657b;
+        }
+        .result-panel {
+            background: #e1effa;
+            border-radius: 24px;
+            padding: 12px 16px;
+            border: 2px solid white;
+            box-shadow: inset 0 1px 3px #aac4dc, 0 6px 10px -4px #6e95b4;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin: 5px 0;
+            flex-wrap: wrap;
+        }
+        .result-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #144d64;
+        }
+        .result-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0f4c5c;
+            line-height: 1.2;
+            text-align: right;
+        }
+        .sub-value {
+            font-size: 1.1rem;
+            color: #1b6b4f;
+            font-weight: 600;
+        }
+        .divider-light {
+            height: 1px;
+            background: linear-gradient(90deg, #b6d2e9, #ffffff, #b6d2e9);
+            margin: 8px 0 6px 0;
+        }
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #1d4f6e;
+            margin-top: 4px;
+        }
+        .footnote {
+            font-size: 0.65rem;
+            color: #3f6f8a;
+            text-align: center;
+            margin-top: 10px;
+            background: #d7e9f8;
+            padding: 5px 12px;
+            border-radius: 30px;
+            display: inline-block;
+            width: auto;
+        }
+        #methodDetail {
+            font-size: 0.7rem;
+            color: #2a6b8a;
+            margin-top: 6px;
+            word-break: break-word;
+        }
+
+        /* 觸控鍵盤樣式 */
+        .touch-keyboard-toggle {
+            margin-top: 12px;
+            display: flex;
+            justify-content: center;
+        }
+        .toggle-keyboard-btn {
+            background: #e0eef9;
+            color: #0f4c5c;
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 40px;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            width: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        .keyboard-panel {
+            background: #eef3fc;
+            border-radius: 28px;
+            margin-top: 12px;
+            padding: 12px;
+            border: 1px solid #bfd7e9;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: none;
+        }
+        .keyboard-panel.show {
+            display: block;
+        }
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .key-btn {
+            background: white;
+            border: 2px solid #bfd7e9;
+            border-radius: 50px;
+            padding: 12px 0;
+            width: 70px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0f4c5c;
+            cursor: pointer;
+            transition: 0.05s linear;
+            touch-action: manipulation;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .key-btn:active {
+            background: #cde1f1;
+            transform: scale(0.94);
+        }
+        .key-btn.wide {
+            width: 110px;
+            font-size: 1.2rem;
+        }
+        .key-btn.special {
+            background: #d4e5f3;
+            border-color: #8eb8d4;
+        }
+        .current-focus {
+            font-size: 0.7rem;
+            background: #ffffffcc;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
+            color: #1f6e8a;
+        }
+        @media (max-width: 550px) {
+            .key-btn { width: 55px; padding: 10px 0; font-size: 1.3rem; }
+            .key-btn.wide { width: 90px; }
+            .calculator-card { padding: 12px 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-card">
+        <h2>📊 單利·複利計算機</h2>
+        <div class="subhead">本金·利率·時間·計息方式 — 一鍵比較</div>
+
+        <div class="input-group">
+            <label>💰 本金 (P) <span id="focusHintPrincipal" class="current-focus">👆 點擊後可用鍵盤</span></label>
+            <input type="number" id="principal" class="input-field" value="100000" step="any" inputmode="none">
+        </div>
+        <div class="input-group">
+            <label>📈 年利率 (%) <span id="focusHintRate" class="current-focus">👆 點擊後可用鍵盤</span></label>
+            <input type="number" id="rate" class="input-field" value="6" step="any" inputmode="none">
+        </div>
+        <div class="input-group">
+            <label>⏱️ 時間 (年) <span id="focusHintYears" class="current-focus">👆 點擊後可用鍵盤</span></label>
+            <input type="number" id="years" class="input-field" value="3" step="any" inputmode="none">
+        </div>
+        <div class="input-group">
+            <label>🔄 計息方式</label>
+            <select id="interestType" class="select-custom">
+                <option value="simple">📘 單利 (Simple Interest)</option>
+                <option value="compound_1">📈 複利 — 每年 (1次/年)</option>
+                <option value="compound_2">📈 複利 — 每半年 (2次/年)</option>
+                <option value="compound_4">📈 複利 — 每季 (4次/年)</option>
+                <option value="compound_12">📈 複利 — 每月 (12次/年)</option>
+                <option value="continuous">✨ 複利 — 連續複利</option>
+            </select>
+        </div>
+
+        <div class="example-row">
+            <span class="example-btn" onclick="fillExample('100000','6','3','simple')">🔹 單利 10萬 6% 3年</span>
+            <span class="example-btn" onclick="fillExample('100000','6','3','compound_1')">🔸 複利(年) 10萬 6% 3年</span>
+            <span class="example-btn" onclick="fillExample('200000','5','4','compound_2')">📘 半年複利 20萬 5% 4年</span>
+            <span class="example-btn" onclick="fillExample('300000','7','5','continuous')">⚡ 連續複利 30萬 7% 5年</span>
+        </div>
+
+        <button onclick="calculate()">
+            <span>🧮</span> 立即計算 <span>📊</span>
+        </button>
+
+        <div class="result-panel" id="resultPanel">
+            <div class="result-row">
+                <span class="result-label">📌 最終本利和</span>
+                <span class="result-value" id="finalAmount">---</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">💹 利息總額</span>
+                <span class="result-value sub-value" id="interestEarned">---</span>
+            </div>
+            <div class="divider-light"></div>
+            <div class="meta-row">
+                <span>本金: <span id="principalDisplay">100,000.00</span></span>
+                <span id="rateFreqDisplay">6% / 單利</span>
+            </div>
+            <div id="methodDetail" style="font-size:0.7rem; color:#2a6b8a; margin-top:5px;"></div>
+        </div>
+
+        <!-- 觸控鍵盤開關與面板 -->
+        <div class="touch-keyboard-toggle">
+            <button class="toggle-keyboard-btn" id="toggleKeyboardBtn">🔢 開啟觸控數字鍵盤</button>
+        </div>
+        <div id="keyboardPanel" class="keyboard-panel">
+            <div class="keyboard-row">
+                <div class="key-btn" data-value="7">7</div>
+                <div class="key-btn" data-value="8">8</div>
+                <div class="key-btn" data-value="9">9</div>
+                <div class="key-btn special" data-action="clear">C</div>
+            </div>
+            <div class="keyboard-row">
+                <div class="key-btn" data-value="4">4</div>
+                <div class="key-btn" data-value="5">5</div>
+                <div class="key-btn" data-value="6">6</div>
+                <div class="key-btn special" data-action="backspace">⌫</div>
+            </div>
+            <div class="keyboard-row">
+                <div class="key-btn" data-value="1">1</div>
+                <div class="key-btn" data-value="2">2</div>
+                <div class="key-btn" data-value="3">3</div>
+                <div class="key-btn wide" data-value="0">0</div>
+            </div>
+            <div class="keyboard-row">
+                <div class="key-btn" data-value=".">.</div>
+                <div class="key-btn wide special" data-action="enter">↵ 完成</div>
+            </div>
+            <div style="text-align: center; font-size:0.7rem; margin-top:6px; color:#386885;">點擊上方輸入框後，使用此鍵盤輸入數字</div>
+        </div>
+
+        <div class="footnote">
+            💡 單利：利息不滾入本金｜複利：利滾利，頻率越高效果越強
+        </div>
+    </div>
+
+    <script>
+        // 獲取DOM元素
+        const principalInput = document.getElementById('principal');
+        const rateInput = document.getElementById('rate');
+        const yearsInput = document.getElementById('years');
+        let currentActiveInput = principalInput; // 默認激活本金
+
+        // 觸控鍵盤相關
+        const keyboardPanel = document.getElementById('keyboardPanel');
+        const toggleBtn = document.getElementById('toggleKeyboardBtn');
+        let keyboardVisible = false;
+
+        // 更新焦點提示樣式 (簡單標記)
+        function updateFocusHint() {
+            document.querySelectorAll('.current-focus').forEach(el => el.style.opacity = '0.6');
+            if (document.activeElement === principalInput) {
+                document.getElementById('focusHintPrincipal').style.opacity = '1';
+                document.getElementById('focusHintPrincipal').innerHTML = '✅ 當前激活';
+            } else if (document.activeElement === rateInput) {
+                document.getElementById('focusHintRate').style.opacity = '1';
+                document.getElementById('focusHintRate').innerHTML = '✅ 當前激活';
+            } else if (document.activeElement === yearsInput) {
+                document.getElementById('focusHintYears').style.opacity = '1';
+                document.getElementById('focusHintYears').innerHTML = '✅ 當前激活';
+            } else {
+                // 若焦點不在輸入框，恢復默認提示
+                document.getElementById('focusHintPrincipal').innerHTML = '👆 點擊後可用鍵盤';
+                document.getElementById('focusHintRate').innerHTML = '👆 點擊後可用鍵盤';
+                document.getElementById('focusHintYears').innerHTML = '👆 點擊後可用鍵盤';
+                document.querySelectorAll('.current-focus').forEach(el => el.style.opacity = '0.7');
+            }
+        }
+
+        // 設置當前激活輸入框
+        function setActiveInput(input) {
+            currentActiveInput = input;
+            input.focus();
+            updateFocusHint();
+        }
+
+        // 監聽輸入框聚焦事件
+        principalInput.addEventListener('focus', () => {
+            currentActiveInput = principalInput;
+            updateFocusHint();
+        });
+        rateInput.addEventListener('focus', () => {
+            currentActiveInput = rateInput;
+            updateFocusHint();
+        });
+        yearsInput.addEventListener('focus', () => {
+            currentActiveInput = yearsInput;
+            updateFocusHint();
+        });
+        // 失去焦點時更新提示
+        principalInput.addEventListener('blur', () => updateFocusHint());
+        rateInput.addEventListener('blur', () => updateFocusHint());
+        yearsInput.addEventListener('blur', () => updateFocusHint());
+
+        // 觸控鍵盤按鍵邏輯
+        function handleKeyboardInput(value, action) {
+            if (!currentActiveInput) return;
+            let currentVal = currentActiveInput.value;
+            if (action === 'clear') {
+                currentActiveInput.value = '';
+            } 
+            else if (action === 'backspace') {
+                currentActiveInput.value = currentVal.slice(0, -1);
+            }
+            else if (action === 'enter') {
+                // 完成輸入，觸發計算並可收起鍵盤
+                calculate();
+                if (keyboardVisible) {
+                    keyboardPanel.classList.remove('show');
+                    keyboardVisible = false;
+                    toggleBtn.innerText = '🔢 開啟觸控數字鍵盤';
+                }
+                return;
+            }
+            else { // 數字或小數點
+                // 避免多個小數點
+                if (value === '.') {
+                    if (currentVal.includes('.')) return;
+                    if (currentVal === '') currentActiveInput.value = '0.';
+                    else currentActiveInput.value = currentVal + '.';
+                } else {
+                    // 數字追加
+                    currentActiveInput.value = currentVal + value;
+                }
+            }
+            // 觸發計算即時更新（可選，提升體驗）
+            calculate();
+        }
+
+        // 綁定鍵盤按鈕事件
+        function bindKeyboardEvents() {
+            const btns = document.querySelectorAll('.key-btn');
+            btns.forEach(btn => {
+                btn.removeEventListener('click', keyboardClickHandler);
+                btn.addEventListener('click', keyboardClickHandler);
+            });
+        }
+
+        function keyboardClickHandler(e) {
+            e.stopPropagation();
+            const btn = e.currentTarget;
+            const value = btn.getAttribute('data-value');
+            const action = btn.getAttribute('data-action');
+            if (value !== null) {
+                handleKeyboardInput(value, null);
+            } else if (action !== null) {
+                handleKeyboardInput(null, action);
+            }
+            // 保持焦點在當前輸入框
+            if (currentActiveInput) currentActiveInput.focus();
+        }
+
+        // 切換鍵盤顯示
+        toggleBtn.addEventListener('click', () => {
+            if (keyboardVisible) {
+                keyboardPanel.classList.remove('show');
+                keyboardVisible = false;
+                toggleBtn.innerText = '🔢 開啟觸控數字鍵盤';
+            } else {
+                keyboardPanel.classList.add('show');
+                keyboardVisible = true;
+                toggleBtn.innerText = '🔽 關閉觸控鍵盤';
+                // 確保至少有一個激活的輸入框
+                if (!currentActiveInput || (document.activeElement !== principalInput && document.activeElement !== rateInput && document.activeElement !== yearsInput)) {
+                    // 默認激活本金輸入框
+                    setActiveInput(principalInput);
+                } else {
+                    updateFocusHint();
+                }
+            }
+        });
+
+        // 原有的計算功能
+        function calculate() {
+            const principal = parseFloat(principalInput.value);
+            const ratePercent = parseFloat(rateInput.value);
+            const years = parseFloat(yearsInput.value);
+            const interestType = document.getElementById('interestType').value;
+
+            if (isNaN(principal) || isNaN(ratePercent) || isNaN(years) || principal < 0 || ratePercent < 0 || years < 0) {
+                alert('請填寫有效的正數（本金、利率、時間）');
+                return;
+            }
+
+            const r = ratePercent / 100;
+            let amount = 0;
+            let interest = 0;
+            let freqText = "";
+            let methodDetail = "";
+
+            if (interestType === "simple") {
+                amount = principal * (1 + r * years);
+                interest = amount - principal;
+                freqText = "單利";
+                methodDetail = `📐 單利公式：本利和 = ${formatMoney(principal)} × (1 + ${ratePercent/100} × ${years}) = ${formatMoney(amount)}`;
+            } 
+            else if (interestType === "continuous") {
+                amount = principal * Math.exp(r * years);
+                interest = amount - principal;
+                freqText = "連續複利";
+                methodDetail = `📐 連續複利公式：本利和 = ${formatMoney(principal)} × e^(${r}×${years}) = ${formatMoney(amount)}`;
+            }
+            else {
+                let m = 1;
+                if (interestType === "compound_1") m = 1;
+                else if (interestType === "compound_2") m = 2;
+                else if (interestType === "compound_4") m = 4;
+                else if (interestType === "compound_12") m = 12;
+                amount = principal * Math.pow(1 + r / m, m * years);
+                interest = amount - principal;
+                if (m === 1) freqText = "每年複利";
+                else if (m === 2) freqText = "每半年複利";
+                else if (m === 4) freqText = "每季複利";
+                else if (m === 12) freqText = "每月複利";
+                methodDetail = `📐 複利公式：本利和 = ${formatMoney(principal)} × (1 + ${(r/m).toFixed(6)})^(${m * years}) = ${formatMoney(amount)}`;
+            }
+
+            document.getElementById('finalAmount').innerText = formatMoney(amount);
+            document.getElementById('interestEarned').innerText = formatMoney(interest);
+            document.getElementById('principalDisplay').innerText = formatMoney(principal);
+            document.getElementById('rateFreqDisplay').innerHTML = ratePercent + '% / ' + freqText;
+            document.getElementById('methodDetail').innerHTML = methodDetail;
+        }
+
+        function formatMoney(value) {
+            if (isNaN(value)) return '---';
+            return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function fillExample(p, r, y, type) {
+            principalInput.value = p;
+            rateInput.value = r;
+            yearsInput.value = y;
+            document.getElementById('interestType').value = type;
+            calculate();
+            // 如果鍵盤開啟，可刷新焦點
+            if (currentActiveInput) currentActiveInput.focus();
+        }
+
+        // 初始化
+        window.onload = function() {
+            calculate();
+            bindKeyboardEvents();
+            // 默認激活本金輸入框，便於直接鍵盤輸入
+            setActiveInput(principalInput);
+            // 為防止點擊其他區域失去焦點，點擊卡片不影響
+            document.querySelector('.calculator-card').addEventListener('click', (e) => {
+                if (!e.target.closest('.input-field') && !e.target.closest('.key-btn') && !e.target.closest('.toggle-keyboard-btn')) {
+                    // 若點擊空白，保持當前激活輸入框，但不改變
+                    if (currentActiveInput) currentActiveInput.focus();
+                }
+            });
+        };
+
+        // 回車快捷鍵仍保留
+        document.querySelectorAll('.input-field, .select-custom').forEach(el => {
+            el.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') calculate();
+            });
+        });
+    </script>
+</body>
+</html>
