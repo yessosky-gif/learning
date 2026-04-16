@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>6x6 數獨對決 - 提交制競速賽</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #2c3e4e 0%, #1a2a36 100%);
+            font-family: 'Segoe UI', '微軟正黑體', 'PingFang TC', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255, 248, 225, 0.9);
+            border-radius: 64px 64px 48px 48px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+            padding: 20px 24px 32px;
+            transition: all 0.2s;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 28px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #f7b05e;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 16px;
+        }
+
+        .mode-btn {
+            background: #2e5a6e;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px 28px;
+            border-radius: 48px;
+            color: #f9eec1;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #1d3e4b;
+            transition: 0.08s linear;
+            font-family: inherit;
+            letter-spacing: 2px;
+        }
+
+        .mode-btn.active {
+            background: #e67e22;
+            box-shadow: 0 4px 0 #b45f1b;
+            color: white;
+            transform: scale(0.98);
+        }
+
+        .new-game-btn {
+            background: #f39c12;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px 32px;
+            border-radius: 48px;
+            color: #2c3e2f;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #c56c00;
+            transition: 0.08s linear;
+            font-family: inherit;
+        }
+
+        .new-game-btn:active, .mode-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #1d3e4b;
+        }
+
+        .difficulty-panel {
+            background: #f3e1be;
+            padding: 6px 16px;
+            border-radius: 48px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: bold;
+            color: #6b3e1c;
+        }
+
+        .boards-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin: 10px 0 10px;
+        }
+
+        .player-board-area {
+            flex: 1;
+            min-width: 300px;
+            background: #fffaf0;
+            border-radius: 48px;
+            padding: 20px 15px 25px;
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+            transition: 0.2s;
+        }
+
+        .single-mode .player-board-area {
+            max-width: 550px;
+            margin: 0 auto;
+        }
+
+        .player-title {
+            font-size: 1.7rem;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 12px;
+            background: #ffd966;
+            display: inline-block;
+            width: auto;
+            padding: 0 20px;
+            border-radius: 40px;
+            letter-spacing: 2px;
+            color: #4a2a0e;
+        }
+
+        .timer-box {
+            font-size: 1.6rem;
+            font-family: monospace;
+            font-weight: bold;
+            background: #2c3e2f;
+            display: inline-block;
+            padding: 5px 16px;
+            border-radius: 36px;
+            color: #f1f9d2;
+            margin-left: 15px;
+        }
+
+        .winner-badge {
+            background: gold;
+            color: #b64900;
+            font-size: 1rem;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: bold;
+            margin-left: 12px;
+        }
+
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            background-color: #7f5b3a;
+            border: 3px solid #7f5b3a;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 20px 0;
+            box-shadow: 0 6px 0 #5a3a22;
+        }
+
+        .grid-cell {
+            aspect-ratio: 1 / 1;
+            background-color: #fff6e5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            font-family: monospace;
+            border: 1px solid #d6b17e;
+            cursor: pointer;
+            transition: 0.05s linear;
+            color: #2c3e2f;
+        }
+
+        /* 宮格邊界 (2x3) */
+        .grid-cell[data-row="0"][data-col="2"], .grid-cell[data-row="0"][data-col="5"],
+        .grid-cell[data-row="1"][data-col="2"], .grid-cell[data-row="1"][data-col="5"],
+        .grid-cell[data-row="2"][data-col="2"], .grid-cell[data-row="2"][data-col="5"],
+        .grid-cell[data-row="3"][data-col="2"], .grid-cell[data-row="3"][data-col="5"],
+        .grid-cell[data-row="4"][data-col="2"], .grid-cell[data-row="4"][data-col="5"],
+        .grid-cell[data-row="5"][data-col="2"], .grid-cell[data-row="5"][data-col="5"] {
+            border-right: 3px solid #aa7744;
+        }
+
+        .grid-cell[data-row="1"][data-col="0"], .grid-cell[data-row="1"][data-col="1"],
+        .grid-cell[data-row="1"][data-col="2"], .grid-cell[data-row="1"][data-col="3"],
+        .grid-cell[data-row="1"][data-col="4"], .grid-cell[data-row="1"][data-col="5"],
+        .grid-cell[data-row="3"][data-col="0"], .grid-cell[data-row="3"][data-col="1"],
+        .grid-cell[data-row="3"][data-col="2"], .grid-cell[data-row="3"][data-col="3"],
+        .grid-cell[data-row="3"][data-col="4"], .grid-cell[data-row="3"][data-col="5"] {
+            border-bottom: 3px solid #aa7744;
+        }
+
+        .grid-cell.selected {
+            background-color: #ffe0a3;
+            box-shadow: inset 0 0 0 3px #f5a623;
+            z-index: 2;
+        }
+
+        .grid-cell.fixed {
+            color: #3e2a1f;
+            background-color: #eeddbb;
+            font-weight: 800;
+        }
+
+        .grid-cell.user-number {
+            color: #1f6392;
+            font-weight: bold;
+        }
+
+        .numpad {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin: 16px 5px 8px;
+        }
+
+        .num-btn {
+            width: 60px;
+            height: 60px;
+            background: #f4d58c;
+            border: none;
+            border-radius: 40px;
+            font-size: 1.9rem;
+            font-weight: bold;
+            color: #4b2f14;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #b97f3a;
+            transition: 0.05s linear;
+            font-family: monospace;
+        }
+
+        .num-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #b97f3a;
+        }
+
+        .del-btn {
+            background: #cd8b62;
+            color: white;
+            font-size: 1.4rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .submit-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 22px;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #1e6b3e;
+        }
+        .reset-board-btn {
+            background: #90a955;
+            color: #2c2b1f;
+            border: none;
+            padding: 8px 22px;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #557c3a;
+        }
+        .status-msg {
+            font-weight: bold;
+            text-align: center;
+            margin-top: 12px;
+            font-size: 1.2rem;
+            background: #efe3cf;
+            border-radius: 60px;
+            padding: 5px;
+        }
+        .error-msg {
+            color: #c0392b;
+            background: #fae5e3;
+            text-align: center;
+            margin: 6px auto 0;
+            border-radius: 32px;
+            padding: 4px;
+            font-size: 0.9rem;
+            width: fit-content;
+        }
+        @media (max-width: 850px) {
+            .num-btn { width: 48px; height: 48px; font-size: 1.5rem; }
+            .grid-cell { font-size: 1.2rem; }
+            .player-title { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container" id="gameContainer">
+    <div class="game-header">
+        <div class="mode-buttons">
+            <button class="mode-btn" data-mode="single">🎮 單人模式</button>
+            <button class="mode-btn" data-mode="dual">⚔️ 雙人對決</button>
+        </div>
+        <div class="difficulty-panel"><span>🏆 難度: 中等 (挖空20格) | 填完後按「提交」判定正確</span></div>
+        <button class="new-game-btn" id="newGameBtn">✨ 全新對局</button>
+    </div>
+    <div id="boardsArea" class="boards-wrapper"></div>
+</div>
+
+<script>
+    // ---------- 6x6 數獨核心 (僅用於生成題目和最終驗證) ----------
+    const SIZE = 6;
+    const SUB_ROWS = 2;
+    const SUB_COLS = 3;
+    const EMPTY = 0;
+    const HOLE_COUNT = 20;
+
+    // 生成完整隨機解
+    function getRandomCompleteBoard() {
+        const board = Array(SIZE).fill().map(() => Array(SIZE).fill(EMPTY));
+        const shuffleArr = (arr) => {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        };
+        const isValid = (b, row, col, num) => {
+            for (let c = 0; c < SIZE; c++) if (b[row][c] === num) return false;
+            for (let r = 0; r < SIZE; r++) if (b[r][col] === num) return false;
+            const startRow = Math.floor(row / SUB_ROWS) * SUB_ROWS;
+            const startCol = Math.floor(col / SUB_COLS) * SUB_COLS;
+            for (let i = 0; i < SUB_ROWS; i++)
+                for (let j = 0; j < SUB_COLS; j++)
+                    if (b[startRow + i][startCol + j] === num) return false;
+            return true;
+        };
+        const solveRandom = (b, row, col) => {
+            if (row === SIZE) return true;
+            if (col === SIZE) return solveRandom(b, row + 1, 0);
+            if (b[row][col] !== EMPTY) return solveRandom(b, row, col + 1);
+            const numbers = shuffleArr([1, 2, 3, 4, 5, 6]);
+            for (let num of numbers) {
+                if (isValid(b, row, col, num)) {
+                    b[row][col] = num;
+                    if (solveRandom(b, row, col + 1)) return true;
+                    b[row][col] = EMPTY;
+                }
+            }
+            return false;
+        };
+        solveRandom(board, 0, 0);
+        return board;
+    }
+
+    function generatePuzzleFromFull(fullBoard, holes) {
+        const puzzle = fullBoard.map(row => [...row]);
+        const fixedMask = Array(SIZE).fill().map(() => Array(SIZE).fill(true));
+        let positions = [];
+        for (let i = 0; i < SIZE; i++)
+            for (let j = 0; j < SIZE; j++) positions.push([i, j]);
+        for (let i = positions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [positions[i], positions[j]] = [positions[j], positions[i]];
+        }
+        let removed = 0;
+        for (let [r, c] of positions) {
+            if (removed < holes) {
+                puzzle[r][c] = EMPTY;
+                fixedMask[r][c] = false;
+                removed++;
+            } else break;
+        }
+        return { puzzle, fixedMask };
+    }
+
+    // 完整校驗盤面 (無空格且符合規則)
+    function isBoardFullyCorrect(board) {
+        for (let i = 0; i < SIZE; i++) {
+            for (let j = 0; j < SIZE; j++) {
+                if (board[i][j] === EMPTY) return false;
+            }
+        }
+        // 檢查行
+        for (let i = 0; i < SIZE; i++) {
+            const rowSet = new Set();
+            for (let j = 0; j < SIZE; j++) {
+                const val = board[i][j];
+                if (val < 1 || val > 6) return false;
+                if (rowSet.has(val)) return false;
+                rowSet.add(val);
+            }
+        }
+        // 檢查列
+        for (let j = 0; j < SIZE; j++) {
+            const colSet = new Set();
+            for (let i = 0; i < SIZE; i++) {
+                const val = board[i][j];
+                if (colSet.has(val)) return false;
+                colSet.add(val);
+            }
+        }
+        // 檢查宮 (2x3)
+        for (let boxRow = 0; boxRow < SIZE; boxRow += SUB_ROWS) {
+            for (let boxCol = 0; boxCol < SIZE; boxCol += SUB_COLS) {
+                const boxSet = new Set();
+                for (let i = 0; i < SUB_ROWS; i++) {
+                    for (let j = 0; j < SUB_COLS; j++) {
+                        const val = board[boxRow + i][boxCol + j];
+                        if (boxSet.has(val)) return false;
+                        boxSet.add(val);
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    // ---------- 玩家類別 (提交制、獨立計時、重置、提交驗證) ----------
+    class SudokuPlayer {
+        constructor(container, playerId, onWinCallback) {
+            this.container = container;
+            this.playerId = playerId;
+            this.onWin = onWinCallback;   // (playerId, timeSec) 勝利時呼叫
+            this.boardData = [];     // 當前盤面 (使用者輸入的數字)
+            this.fixedMask = [];      // true=不可編輯(題目)
+            this.selectedRow = -1;
+            this.selectedCol = -1;
+            this.timerSeconds = 0;
+            this.timerInterval = null;
+            this.isFinished = false;   // 已提交正確並勝利
+            this.initialPuzzle = [];
+            this.initialFixed = [];
+        }
+
+        initGame(initialBoard, fixedMask) {
+            this.boardData = initialBoard.map(row => [...row]);
+            this.fixedMask = fixedMask.map(row => [...row]);
+            this.initialPuzzle = initialBoard.map(row => [...row]);
+            this.initialFixed = fixedMask.map(row => [...row]);
+            this.selectedRow = -1;
+            this.selectedCol = -1;
+            this.isFinished = false;
+            this.stopTimer();
+            this.timerSeconds = 0;
+            this.updateTimerDisplay();
+            this.hideErrorMsg();
+            this.render();
+        }
+
+        startTimer() {
+            if (this.timerInterval) clearInterval(this.timerInterval);
+            this.timerInterval = setInterval(() => {
+                if (!this.isFinished && this.container && document.body.contains(this.container)) {
+                    this.timerSeconds++;
+                    this.updateTimerDisplay();
+                }
+            }, 1000);
+        }
+
+        stopTimer() {
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+            }
+        }
+
+        updateTimerDisplay() {
+            const timerSpan = this.container.querySelector('.timer-value');
+            if (timerSpan) {
+                const mins = Math.floor(this.timerSeconds / 60);
+                const secs = this.timerSeconds % 60;
+                timerSpan.innerText = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+            }
+        }
+
+        // 重置當前盤面到初始題目 (清空所有用戶填入的數字)，計時歸零，清除完成狀態
+        resetToInitial() {
+            if (this.isFinished) return;
+            this.boardData = this.initialPuzzle.map(row => [...row]);
+            this.fixedMask = this.initialFixed.map(row => [...row]);
+            this.selectedRow = -1;
+            this.selectedCol = -1;
+            this.stopTimer();
+            this.timerSeconds = 0;
+            this.updateTimerDisplay();
+            this.startTimer();
+            this.hideErrorMsg();
+            this.render();
+        }
+
+        // 用戶輸入數字 (不校驗衝突，只檢查固定格)
+        inputNumber(num) {
+            if (this.isFinished) return false;
+            if (this.selectedRow === -1 || this.selectedCol === -1) return false;
+            const r = this.selectedRow, c = this.selectedCol;
+            if (this.fixedMask[r][c]) return false;   // 題目不可修改
+            if (num === 0) {
+                this.boardData[r][c] = EMPTY;
+                this.render();
+                return true;
+            }
+            // 只允許1-6
+            if (num >= 1 && num <= 6) {
+                this.boardData[r][c] = num;
+                this.render();
+                return true;
+            }
+            return false;
+        }
+
+        // 提交檢查
+        submit() {
+            if (this.isFinished) {
+                this.showTemporaryMsg("遊戲已經完成，無法重複提交", true);
+                return false;
+            }
+            if (isBoardFullyCorrect(this.boardData)) {
+                // 正確！勝利
+                this.isFinished = true;
+                this.stopTimer();
+                if (this.onWin) this.onWin(this.playerId, this.timerSeconds);
+                this.render();
+                this.showTemporaryMsg("✅ 正確！恭喜完成！", false);
+                return true;
+            } else {
+                // 錯誤：可能空格或衝突
+                this.showTemporaryMsg("❌ 提交失敗：盤面尚未完成或數字衝突，請檢查後再提交", true);
+                return false;
+            }
+        }
+
+        showTemporaryMsg(msg, isError) {
+            let msgDiv = this.container.querySelector('.player-error-msg');
+            if (!msgDiv) {
+                msgDiv = document.createElement('div');
+                msgDiv.className = 'error-msg';
+                this.container.appendChild(msgDiv);
+            }
+            msgDiv.innerText = msg;
+            msgDiv.style.color = isError ? "#c0392b" : "#2c6e2f";
+            msgDiv.style.background = isError ? "#fae5e3" : "#e0f2e9";
+            setTimeout(() => {
+                if (msgDiv && msgDiv.parentNode) msgDiv.style.opacity = '0';
+                setTimeout(() => {
+                    if (msgDiv && msgDiv.parentNode) msgDiv.remove();
+                }, 400);
+            }, 2000);
+        }
+
+        hideErrorMsg() {
+            const old = this.container.querySelector('.player-error-msg');
+            if (old) old.remove();
+        }
+
+        render() {
+            if (!this.container) return;
+            const gridDiv = this.container.querySelector('.sudoku-grid');
+            if (!gridDiv) return;
+            gridDiv.innerHTML = '';
+            for (let i = 0; i < SIZE; i++) {
+                for (let j = 0; j < SIZE; j++) {
+                    const value = this.boardData[i][j];
+                    const isFixed = this.fixedMask[i][j];
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    if (isFixed) cell.classList.add('fixed');
+                    else if (value !== EMPTY) cell.classList.add('user-number');
+                    if (this.selectedRow === i && this.selectedCol === j) cell.classList.add('selected');
+                    cell.setAttribute('data-row', i);
+                    cell.setAttribute('data-col', j);
+                    cell.innerText = value === EMPTY ? '' : value;
+                    cell.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (this.isFinished) return;
+                        this.selectedRow = i;
+                        this.selectedCol = j;
+                        this.render();
+                    });
+                    gridDiv.appendChild(cell);
+                }
+            }
+            const winnerSpan = this.container.querySelector('.winner-badge');
+            if (winnerSpan) {
+                if (this.isFinished) {
+                    winnerSpan.innerText = '🏆 勝利!';
+                    winnerSpan.style.display = 'inline-block';
+                } else {
+                    winnerSpan.style.display = 'none';
+                }
+            }
+        }
+
+        destroy() {
+            this.stopTimer();
+            if (this.container) this.container.innerHTML = '';
+        }
+    }
+
+    // ---------- 全域管理 ----------
+    let currentMode = 'single';
+    let singlePlayer = null;
+    let dualPlayers = { p1: null, p2: null };
+    let dualGameFinished = false;    // 雙人模式下，有人獲勝後不再接受提交
+
+    const boardsArea = document.getElementById('boardsArea');
+    const newGameBtn = document.getElementById('newGameBtn');
+    const modeBtns = document.querySelectorAll('.mode-btn');
+
+    function generateNewGameForMode(mode) {
+        if (mode === 'single') {
+            const fullBoard = getRandomCompleteBoard();
+            const { puzzle, fixedMask } = generatePuzzleFromFull(fullBoard, HOLE_COUNT);
+            return { puzzle, fixedMask };
+        } else {
+            const fullBoard = getRandomCompleteBoard();
+            const { puzzle: puzzle1, fixedMask: mask1 } = generatePuzzleFromFull(fullBoard, HOLE_COUNT);
+            const { puzzle: puzzle2, fixedMask: mask2 } = generatePuzzleFromFull(fullBoard, HOLE_COUNT);
+            return { p1Data: { puzzle: puzzle1, fixedMask: mask1 }, p2Data: { puzzle: puzzle2, fixedMask: mask2 } };
+        }
+    }
+
+    // 雙人勝利回呼
+    function onDualWin(playerId, timeSec) {
+        if (dualGameFinished) return;
+        dualGameFinished = true;
+        const winnerName = playerId === 'p1' ? '玩家 1' : '玩家 2';
+        // 停止另一方並標記失敗不可再提交
+        const loserId = playerId === 'p1' ? 'p2' : 'p1';
+        if (dualPlayers[loserId]) {
+            dualPlayers[loserId].isFinished = true;
+            dualPlayers[loserId].stopTimer();
+            dualPlayers[loserId].render();
+        }
+        if (dualPlayers[playerId]) {
+            dualPlayers[playerId].render(); // 確保顯示勝利徽章
+        }
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'status-msg';
+        const mins = Math.floor(timeSec / 60);
+        const secs = timeSec % 60;
+        msgDiv.innerText = `🏆 對決結束！ ${winnerName} 率先提交正確解答！ 用時 ${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')} 🏆`;
+        boardsArea.parentNode.insertBefore(msgDiv, boardsArea.nextSibling);
+        setTimeout(() => msgDiv.remove(), 5000);
+    }
+
+    function onSingleWin(playerId, timeSec) {
+        if (singlePlayer && !singlePlayer.isFinished) {
+            // 已經在submit內設置finished, 但為了訊息
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'status-msg';
+            const mins = Math.floor(timeSec / 60);
+            const secs = timeSec % 60;
+            msgDiv.innerText = `🎉 恭喜完成單人數獨！ 用時 ${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')} 🎉`;
+            boardsArea.parentNode.insertBefore(msgDiv, boardsArea.nextSibling);
+            setTimeout(() => msgDiv.remove(), 4000);
+        }
+    }
+
+    function buildNumpadForPlayer(containerId, playerInstance) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        for (let num = 1; num <= 6; num++) {
+            const btn = document.createElement('button');
+            btn.className = 'num-btn';
+            btn.innerText = num;
+            btn.addEventListener('click', () => {
+                if (playerInstance && !playerInstance.isFinished) playerInstance.inputNumber(num);
+            });
+            container.appendChild(btn);
+        }
+        const delBtn = document.createElement('button');
+        delBtn.className = 'num-btn del-btn';
+        delBtn.innerText = '⌫';
+        delBtn.addEventListener('click', () => {
+            if (playerInstance && !playerInstance.isFinished) playerInstance.inputNumber(0);
+        });
+        container.appendChild(delBtn);
+    }
+
+    // 建立單人UI
+    function buildSingleUI() {
+        const singleDiv = document.createElement('div');
+        singleDiv.className = 'player-board-area';
+        singleDiv.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                <div class="player-title">🧩 單人數獨</div>
+                <div class="timer-box">⏱️ <span class="timer-value">00:00</span></div>
+                <span class="winner-badge" style="display:none;">🏆 勝利!</span>
+            </div>
+            <div class="sudoku-grid"></div>
+            <div class="numpad" id="single-numpad"></div>
+            <div class="action-buttons">
+                <button class="submit-btn" id="single-submit">📤 提交答案</button>
+                <button class="reset-board-btn" id="single-reset">🔄 重置本局</button>
+            </div>
+        `;
+        boardsArea.appendChild(singleDiv);
+        const { puzzle, fixedMask } = generateNewGameForMode('single');
+        singlePlayer = new SudokuPlayer(singleDiv, 'single', (id, t) => onSingleWin(id, t));
+        singlePlayer.initGame(puzzle, fixedMask);
+        singlePlayer.startTimer();
+        buildNumpadForPlayer('single-numpad', singlePlayer);
+        const submitBtn = singleDiv.querySelector('#single-submit');
+        const resetBtn = singleDiv.querySelector('#single-reset');
+        submitBtn.onclick = () => { if (singlePlayer) singlePlayer.submit(); };
+        resetBtn.onclick = () => { if (singlePlayer && !singlePlayer.isFinished) singlePlayer.resetToInitial(); };
+    }
+
+    // 建立雙人UI
+    function buildDualUI() {
+        const gameData = generateNewGameForMode('dual');
+        const p1Div = createDualBoardDOM('玩家 1', 'p1');
+        const p2Div = createDualBoardDOM('玩家 2', 'p2');
+        boardsArea.appendChild(p1Div);
+        boardsArea.appendChild(p2Div);
+        dualPlayers.p1 = new SudokuPlayer(p1Div, 'p1', (id, t) => onDualWin(id, t));
+        dualPlayers.p2 = new SudokuPlayer(p2Div, 'p2', (id, t) => onDualWin(id, t));
+        dualPlayers.p1.initGame(gameData.p1Data.puzzle, gameData.p1Data.fixedMask);
+        dualPlayers.p2.initGame(gameData.p2Data.puzzle, gameData.p2Data.fixedMask);
+        dualPlayers.p1.startTimer();
+        dualPlayers.p2.startTimer();
+        buildNumpadForPlayer('numpad-p1', dualPlayers.p1);
+        buildNumpadForPlayer('numpad-p2', dualPlayers.p2);
+        const submit1 = p1Div.querySelector('.submit-btn');
+        const reset1 = p1Div.querySelector('.reset-board-btn');
+        const submit2 = p2Div.querySelector('.submit-btn');
+        const reset2 = p2Div.querySelector('.reset-board-btn');
+        submit1.onclick = () => { if (!dualGameFinished && dualPlayers.p1 && !dualPlayers.p1.isFinished) dualPlayers.p1.submit(); };
+        reset1.onclick = () => { if (!dualGameFinished && dualPlayers.p1 && !dualPlayers.p1.isFinished) dualPlayers.p1.resetToInitial(); };
+        submit2.onclick = () => { if (!dualGameFinished && dualPlayers.p2 && !dualPlayers.p2.isFinished) dualPlayers.p2.submit(); };
+        reset2.onclick = () => { if (!dualGameFinished && dualPlayers.p2 && !dualPlayers.p2.isFinished) dualPlayers.p2.resetToInitial(); };
+    }
+
+    function createDualBoardDOM(title, playerKey) {
+        const div = document.createElement('div');
+        div.className = 'player-board-area';
+        div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                <div class="player-title">${title}</div>
+                <div class="timer-box">⏱️ <span class="timer-value">00:00</span></div>
+                <span class="winner-badge" style="display:none;">🏆 勝利!</span>
+            </div>
+            <div class="sudoku-grid"></div>
+            <div class="numpad" id="numpad-${playerKey}"></div>
+            <div class="action-buttons">
+                <button class="submit-btn">📤 提交答案</button>
+                <button class="reset-board-btn">🔄 重置本局</button>
+            </div>
+        `;
+        return div;
+    }
+
+    function rebuildGameUI() {
+        boardsArea.innerHTML = '';
+        dualGameFinished = false;
+        if (currentMode === 'single') {
+            boardsArea.classList.add('single-mode');
+            buildSingleUI();
+        } else {
+            boardsArea.classList.remove('single-mode');
+            buildDualUI();
+        }
+    }
+
+    function switchMode(mode) {
+        currentMode = mode;
+        if (singlePlayer) { singlePlayer.destroy(); singlePlayer = null; }
+        if (dualPlayers.p1) { dualPlayers.p1.destroy(); dualPlayers.p2.destroy(); dualPlayers = { p1: null, p2: null }; }
+        rebuildGameUI();
+        modeBtns.forEach(btn => {
+            if (btn.dataset.mode === mode) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+    }
+
+    function resetFullGame() {
+        if (currentMode === 'single') {
+            if (singlePlayer) {
+                const { puzzle, fixedMask } = generateNewGameForMode('single');
+                singlePlayer.initGame(puzzle, fixedMask);
+                singlePlayer.stopTimer();
+                singlePlayer.timerSeconds = 0;
+                singlePlayer.updateTimerDisplay();
+                singlePlayer.startTimer();
+                singlePlayer.hideErrorMsg();
+            }
+        } else {
+            if (dualPlayers.p1 && dualPlayers.p2) {
+                const gameData = generateNewGameForMode('dual');
+                dualPlayers.p1.initGame(gameData.p1Data.puzzle, gameData.p1Data.fixedMask);
+                dualPlayers.p2.initGame(gameData.p2Data.puzzle, gameData.p2Data.fixedMask);
+                dualPlayers.p1.stopTimer(); dualPlayers.p2.stopTimer();
+                dualPlayers.p1.timerSeconds = 0; dualPlayers.p2.timerSeconds = 0;
+                dualPlayers.p1.updateTimerDisplay(); dualPlayers.p2.updateTimerDisplay();
+                dualPlayers.p1.startTimer(); dualPlayers.p2.startTimer();
+                dualGameFinished = false;
+                dualPlayers.p1.hideErrorMsg(); dualPlayers.p2.hideErrorMsg();
+            } else {
+                rebuildGameUI();
+            }
+        }
+        const oldMsg = document.querySelector('.status-msg');
+        if(oldMsg) oldMsg.remove();
+    }
+
+    // 綁定事件
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+    });
+    newGameBtn.addEventListener('click', () => resetFullGame());
+
+    switchMode('single');
+</script>
+</body>
+</html>
