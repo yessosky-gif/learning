@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>6x6 數獨對決 - 難度自選 | 重置不重置計時</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #2c3e4e 0%, #1a2a36 100%);
+            font-family: 'Segoe UI', '微軟正黑體', 'PingFang TC', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255, 248, 225, 0.9);
+            border-radius: 64px 64px 48px 48px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+            padding: 20px 24px 32px;
+            transition: all 0.2s;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 28px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #f7b05e;
+        }
+
+        .mode-section {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 16px;
+        }
+
+        .mode-btn {
+            background: #2e5a6e;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px 28px;
+            border-radius: 48px;
+            color: #f9eec1;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #1d3e4b;
+            transition: 0.08s linear;
+            font-family: inherit;
+            letter-spacing: 2px;
+        }
+
+        .mode-btn.active {
+            background: #e67e22;
+            box-shadow: 0 4px 0 #b45f1b;
+            color: white;
+            transform: scale(0.98);
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 10px;
+            background: #f3e1be;
+            padding: 5px 18px;
+            border-radius: 48px;
+            align-items: center;
+        }
+
+        .difficulty-btn {
+            background: #bc9a6c;
+            border: none;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 6px 20px;
+            border-radius: 40px;
+            color: #2c1a0c;
+            cursor: pointer;
+            transition: 0.08s;
+            font-family: inherit;
+        }
+
+        .difficulty-btn.active {
+            background: #e67e22;
+            color: white;
+            box-shadow: 0 2px 0 #b45f1b;
+        }
+
+        .new-game-btn {
+            background: #f39c12;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px 32px;
+            border-radius: 48px;
+            color: #2c3e2f;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #c56c00;
+            transition: 0.08s linear;
+            font-family: inherit;
+        }
+
+        .new-game-btn:active, .mode-btn:active, .difficulty-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #1d3e4b;
+        }
+
+        .boards-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin: 10px 0 10px;
+        }
+
+        .player-board-area {
+            flex: 1;
+            min-width: 300px;
+            background: #fffaf0;
+            border-radius: 48px;
+            padding: 20px 15px 25px;
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+            transition: 0.2s;
+        }
+
+        .single-mode .player-board-area {
+            max-width: 550px;
+            margin: 0 auto;
+        }
+
+        .player-title {
+            font-size: 1.7rem;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 12px;
+            background: #ffd966;
+            display: inline-block;
+            width: auto;
+            padding: 0 20px;
+            border-radius: 40px;
+            letter-spacing: 2px;
+            color: #4a2a0e;
+        }
+
+        .timer-box {
+            font-size: 1.6rem;
+            font-family: monospace;
+            font-weight: bold;
+            background: #2c3e2f;
+            display: inline-block;
+            padding: 5px 16px;
+            border-radius: 36px;
+            color: #f1f9d2;
+            margin-left: 15px;
+        }
+
+        .winner-badge {
+            background: gold;
+            color: #b64900;
+            font-size: 1rem;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: bold;
+            margin-left: 12px;
+        }
+
+        .loser-badge {
+            background: #8e6b4c;
+            color: #f0e2c5;
+            font-size: 1rem;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: bold;
+            margin-left: 12px;
+        }
+
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            background-color: #7f5b3a;
+            border: 3px solid #7f5b3a;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 20px 0;
+            box-shadow: 0 6px 0 #5a3a22;
+        }
+
+        .grid-cell {
+            aspect-ratio: 1 / 1;
+            background-color: #fff6e5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            font-family: monospace;
+            border: 1px solid #d6b17e;
+            cursor: pointer;
+            transition: 0.05s linear;
+            color: #2c3e2f;
+        }
+
+        /* 宮格邊界 (2x3) */
+        .grid-cell[data-row="0"][data-col="2"], .grid-cell[data-row="0"][data-col="5"],
+        .grid-cell[data-row="1"][data-col="2"], .grid-cell[data-row="1"][data-col="5"],
+        .grid-cell[data-row="2"][data-col="2"], .grid-cell[data-row="2"][data-col="5"],
+        .grid-cell[data-row="3"][data-col="2"], .grid-cell[data-row="3"][data-col="5"],
+        .grid-cell[data-row="4"][data-col="2"], .grid-cell[data-row="4"][data-col="5"],
+        .grid-cell[data-row="5"][data-col="2"], .grid-cell[data-row="5"][data-col="5"] {
+            border-right: 3px solid #aa7744;
+        }
+
+        .grid-cell[data-row="1"][data-col="0"], .grid-cell[data-row="1"][data-col="1"],
+        .grid-cell[data-row="1"][data-col="2"], .grid-cell[data-row="1"][data-col="3"],
+        .grid-cell[data-row="1"][data-col="4"], .grid-cell[data-row="1"][data-col="5"],
+        .grid-cell[data-row="3"][data-col="0"], .grid-cell[data-row="3"][data-col="1"],
+        .grid-cell[data-row="3"][data-col="2"], .grid-cell[data-row="3"][data-col="3"],
+        .grid-cell[data-row="3"][data-col="4"], .grid-cell[data-row="3"][data-col="5"] {
+            border-bottom: 3px solid #aa7744;
+        }
+
+        .grid-cell.selected {
+            background-color: #ffe0a3;
+            box-shadow: inset 0 0 0 3px #f5a623;
+            z-index: 2;
+        }
+
+        .grid-cell.fixed {
+            color: #3e2a1f;
+            background-color: #eeddbb;
+            font-weight: 800;
+        }
+
+        .grid-cell.user-number {
+            color: #1f6392;
+            font-weight: bold;
+        }
+
+        .numpad {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin: 16px 5px 8px;
+        }
+
+        .num-btn {
+            width: 60px;
+            height: 60px;
+            background: #f4d58c;
+            border: none;
+            border-radius: 40px;
+            font-size: 1.9rem;
+            font-weight: bold;
+            color: #4b2f14;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #b97f3a;
+            transition: 0.05s linear;
+            font-family: monospace;
+        }
+
+        .num-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #b97f3a;
+        }
+
+        .del-btn {
+            background: #cd8b62;
+            color: white;
+            font-size: 1.4rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .start-btn {
+            background: #2c6e2f;
+            color: white;
+            border: none;
+            padding: 8px 22px;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #1a4a1c;
+        }
+        .submit-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 22px;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #1e6b3e;
+        }
+        .reset-board-btn {
+            background: #90a955;
+            color: #2c2b1f;
+            border: none;
+            padding: 8px 22px;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #557c3a;
+        }
+        .status-msg {
+            font-weight: bold;
+            text-align: center;
+            margin-top: 12px;
+            font-size: 1.2rem;
+            background: #efe3cf;
+            border-radius: 60px;
+            padding: 5px;
+        }
+        .error-msg {
+            color: #c0392b;
+            background: #fae5e3;
+            text-align: center;
+            margin: 6px auto 0;
+            border-radius: 32px;
+            padding: 4px;
+            font-size: 0.9rem;
+            width: fit-content;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        @media (max-width: 850px) {
+            .num-btn { width: 48px; height: 48px; font-size: 1.5rem; }
+            .grid-cell { font-size: 1.2rem; }
+            .player-title { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container" id="gameContainer">
+    <div class="game-header">
+        <div class="mode-section">
+            <div class="mode-buttons">
+                <button class="mode-btn" data-mode="single">🎮 單人模式</button>
+                <button class="mode-btn" data-mode="dual">⚔️ 雙人對決</button>
+            </div>
+            <div class="difficulty-selector">
+                <span>⚙️ 難度：</span>
+                <button class="difficulty-btn" data-diff="easy">🌱 簡單 (挖空8)</button>
+                <button class="difficulty-btn" data-diff="medium" class="active">🌟 中等 (挖空12)</button>
+                <button class="difficulty-btn" data-diff="hard">🔥 困難 (挖空16)</button>
+            </div>
+        </div>
+        <button class="new-game-btn" id="newGameBtn">✨ 全新對局</button>
+    </div>
+    <div id="boardsArea" class="boards-wrapper"></div>
+</div>
+
+<script>
+    // ---------- 6x6 數獨核心 ----------
+    const SIZE = 6;
+    const SUB_ROWS = 2;
+    const SUB_COLS = 3;
+    const EMPTY = 0;
+
+    // 難度對應挖空數量
+    const DIFFICULTY_HOLES = {
+        easy: 8,
+        medium: 12,
+        hard: 16
+    };
+    let currentDifficulty = 'medium';   // 當前選擇的難度
+
+    function getCurrentHoleCount() {
+        return DIFFICULTY_HOLES[currentDifficulty];
+    }
+
+    // 生成完整隨機終盤
+    function getRandomCompleteBoard() {
+        const board = Array(SIZE).fill().map(() => Array(SIZE).fill(EMPTY));
+        const shuffleArr = (arr) => {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        };
+        const isValid = (b, row, col, num) => {
+            for (let c = 0; c < SIZE; c++) if (b[row][c] === num) return false;
+            for (let r = 0; r < SIZE; r++) if (b[r][col] === num) return false;
+            const startRow = Math.floor(row / SUB_ROWS) * SUB_ROWS;
+            const startCol = Math.floor(col / SUB_COLS) * SUB_COLS;
+            for (let i = 0; i < SUB_ROWS; i++)
+                for (let j = 0; j < SUB_COLS; j++)
+                    if (b[startRow + i][startCol + j] === num) return false;
+            return true;
+        };
+        const solveRandom = (b, row, col) => {
+            if (row === SIZE) return true;
+            if (col === SIZE) return solveRandom(b, row + 1, 0);
+            if (b[row][col] !== EMPTY) return solveRandom(b, row, col + 1);
+            const numbers = shuffleArr([1, 2, 3, 4, 5, 6]);
+            for (let num of numbers) {
+                if (isValid(b, row, col, num)) {
+                    b[row][col] = num;
+                    if (solveRandom(b, row, col + 1)) return true;
+                    b[row][col] = EMPTY;
+                }
+            }
+            return false;
+        };
+        solveRandom(board, 0, 0);
+        return board;
+    }
+
+    function generatePuzzleFromFull(fullBoard, holes) {
+        const puzzle = fullBoard.map(row => [...row]);
+        const fixedMask = Array(SIZE).fill().map(() => Array(SIZE).fill(true));
+        let positions = [];
+        for (let i = 0; i < SIZE; i++)
+            for (let j = 0; j < SIZE; j++) positions.push([i, j]);
+        for (let i = positions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [positions[i], positions[j]] = [positions[j], positions[i]];
+        }
+        let removed = 0;
+        for (let [r, c] of positions) {
+            if (removed < holes) {
+                puzzle[r][c] = EMPTY;
+                fixedMask[r][c] = false;
+                removed++;
+            } else break;
+        }
+        return { puzzle, fixedMask };
+    }
+
+    function isBoardFullyCorrect(board) {
+        for (let i = 0; i < SIZE; i++) {
+            for (let j = 0; j < SIZE; j++) {
+                if (board[i][j] === EMPTY) return false;
+            }
+        }
+        for (let i = 0; i < SIZE; i++) {
+            const rowSet = new Set();
+            for (let j = 0; j < SIZE; j++) {
+                const val = board[i][j];
+                if (val < 1 || val > 6) return false;
+                if (rowSet.has(val)) return false;
+                rowSet.add(val);
+            }
+        }
+        for (let j = 0; j < SIZE; j++) {
+            const colSet = new Set();
+            for (let i = 0; i < SIZE; i++) {
+                const val = board[i][j];
+                if (colSet.has(val)) return false;
+                colSet.add(val);
+            }
+        }
+        for (let boxRow = 0; boxRow < SIZE; boxRow += SUB_ROWS) {
+            for (let boxCol = 0; boxCol < SIZE; boxCol += SUB_COLS) {
+                const boxSet = new Set();
+                for (let i = 0; i < SUB_ROWS; i++) {
+                    for (let j = 0; j < SUB_COLS; j++) {
+                        const val = board[boxRow + i][boxCol + j];
+                        if (boxSet.has(val)) return false;
+                        boxSet.add(val);
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    // ---------- 玩家類別 (重置不重置計時) ----------
+    class SudokuPlayer {
+        constructor(container, playerId, onWinCallback) {
+            this.container = container;
+            this.playerId = playerId;
+            this.onWin = onWinCallback;
+            this.boardData = [];
+            this.fixedMask = [];
+            this.selectedRow = -1;
+            this.selectedCol = -1;
+            this.timerSeconds = 0;
+            this.timerInterval = null;
+            this.isFinished = false;      // 是否已經完成（勝利）
+            this.isWinner = false;        // 是否為勝利者（用於顯示徽章）
+            this.isGameOver = false;      // 遊戲是否已結束（因對手勝利而結束）
+            this.isActive = false;        // 是否已按下「開始」
+            this.initialPuzzle = [];
+            this.initialFixed = [];
+        }
+
+        // 載入新題目 (保留計時狀態與激活狀態)
+        loadNewPuzzle(puzzle, fixedMask) {
+            this.boardData = puzzle.map(row => [...row]);
+            this.fixedMask = fixedMask.map(row => [...row]);
+            this.initialPuzzle = puzzle.map(row => [...row]);
+            this.initialFixed = fixedMask.map(row => [...row]);
+            this.selectedRow = -1;
+            this.selectedCol = -1;
+            this.hideErrorMsg();
+            if (this.isActive && !this.isFinished && !this.isGameOver && !this.timerInterval) {
+                this.startTimer();
+            }
+            this.setControlsEnabled(this.isActive && !this.isFinished && !this.isGameOver);
+            this.render();
+        }
+
+        initGame(initialBoard, fixedMask) {
+            this.boardData = initialBoard.map(row => [...row]);
+            this.fixedMask = fixedMask.map(row => [...row]);
+            this.initialPuzzle = initialBoard.map(row => [...row]);
+            this.initialFixed = fixedMask.map(row => [...row]);
+            this.selectedRow = -1;
+            this.selectedCol = -1;
+            this.isFinished = false;
+            this.isWinner = false;
+            this.isGameOver = false;
+            this.isActive = false;
+            this.stopTimer();
+            this.timerSeconds = 0;
+            this.updateTimerDisplay();
+            this.hideErrorMsg();
+            this.render();
+            this.setControlsEnabled(false);
+            const startBtn = this.container.querySelector('.start-btn');
+            if (startBtn) startBtn.disabled = false;
+            const resetBtn = this.container.querySelector('.reset-board-btn');
+            if (resetBtn) resetBtn.disabled = false;
+        }
+
+        startGame() {
+            if (this.isActive || this.isFinished || this.isGameOver) return;
+            this.isActive = true;
+            this.stopTimer();
+            this.timerSeconds = 0;
+            this.updateTimerDisplay();
+            this.startTimer();
+            this.setControlsEnabled(true);
+            const startBtn = this.container.querySelector('.start-btn');
+            if (startBtn) startBtn.disabled = true;
+            this.render();
+        }
+
+        setControlsEnabled(enabled) {
+            const numpadBtns = this.container.querySelectorAll('.num-btn');
+            numpadBtns.forEach(btn => {
+                if (enabled) btn.removeAttribute('disabled');
+                else btn.setAttribute('disabled', 'disabled');
+            });
+            const submitBtn = this.container.querySelector('.submit-btn');
+            if (submitBtn) {
+                if (enabled && !this.isFinished && !this.isGameOver) submitBtn.disabled = false;
+                else submitBtn.disabled = true;
+            }
+            this.render();
+        }
+
+        startTimer() {
+            if (this.timerInterval) clearInterval(this.timerInterval);
+            this.timerInterval = setInterval(() => {
+                if (this.isActive && !this.isFinished && !this.isGameOver && this.container && document.body.contains(this.container)) {
+                    this.timerSeconds++;
+                    this.updateTimerDisplay();
+                }
+            }, 1000);
+        }
+
+        stopTimer() {
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+            }
+        }
+
+        updateTimerDisplay() {
+            const timerSpan = this.container.querySelector('.timer-value');
+            if (timerSpan) {
+                const mins = Math.floor(this.timerSeconds / 60);
+                const secs = this.timerSeconds % 60;
+                timerSpan.innerText = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+            }
+        }
+
+        // 重置本局：保留計時數值與激活狀態，僅重置盤面為新題目（使用當前難度）
+        resetToInitial() {
+            if (this.isFinished || this.isGameOver) return;
+            if (window.generateNewPuzzleForPlayer) {
+                const { puzzle, fixedMask } = window.generateNewPuzzleForPlayer();
+                const wasActive = this.isActive;
+                const wasTimerRunning = (this.timerInterval !== null);
+                const oldSeconds = this.timerSeconds;
+                this.boardData = puzzle.map(row => [...row]);
+                this.fixedMask = fixedMask.map(row => [...row]);
+                this.initialPuzzle = puzzle.map(row => [...row]);
+                this.initialFixed = fixedMask.map(row => [...row]);
+                this.selectedRow = -1;
+                this.selectedCol = -1;
+                this.hideErrorMsg();
+                if (wasActive && !this.isFinished && !this.isGameOver) {
+                    if (!this.timerInterval) {
+                        this.startTimer();
+                    }
+                } else {
+                    if (!wasActive) {
+                        this.stopTimer();
+                        this.timerSeconds = 0;
+                        this.updateTimerDisplay();
+                    }
+                }
+                if (wasActive) {
+                    this.timerSeconds = oldSeconds;
+                    this.updateTimerDisplay();
+                }
+                this.isActive = wasActive;
+                this.setControlsEnabled(wasActive && !this.isFinished && !this.isGameOver);
+                const startBtn = this.container.querySelector('.start-btn');
+                if (startBtn) {
+                    if (wasActive) startBtn.disabled = true;
+                    else startBtn.disabled = false;
+                }
+                this.render();
+            }
+        }
+
+        // 強制結束（對手勝利時調用）
+        forceLose() {
+            this.isGameOver = true;
+            this.isActive = false;
+            this.stopTimer();
+            this.setControlsEnabled(false);
+            const startBtn = this.container.querySelector('.start-btn');
+            if (startBtn) startBtn.disabled = true;
+            this.render();
+        }
+
+        inputNumber(num) {
+            if (!this.isActive || this.isFinished || this.isGameOver) return false;
+            if (this.selectedRow === -1 || this.selectedCol === -1) return false;
+            const r = this.selectedRow, c = this.selectedCol;
+            if (this.fixedMask[r][c]) return false;
+            if (num === 0) {
+                this.boardData[r][c] = EMPTY;
+                this.render();
+                return true;
+            }
+            if (num >= 1 && num <= 6) {
+                this.boardData[r][c] = num;
+                this.render();
+                return true;
+            }
+            return false;
+        }
+
+        submit() {
+            if (!this.isActive || this.isFinished || this.isGameOver) {
+                this.showTemporaryMsg("請先按下「開始」進行遊戲", true);
+                return false;
+            }
+            if (isBoardFullyCorrect(this.boardData)) {
+                this.isFinished = true;
+                this.isWinner = true;
+                this.isActive = false;
+                this.stopTimer();
+                if (this.onWin) this.onWin(this.playerId, this.timerSeconds);
+                this.setControlsEnabled(false);
+                const startBtn = this.container.querySelector('.start-btn');
+                if (startBtn) startBtn.disabled = true;
+                this.render();
+                this.showTemporaryMsg("✅ 正確！恭喜完成！", false);
+                return true;
+            } else {
+                this.showTemporaryMsg("❌ 提交失敗：盤面尚未完成或數字衝突，請檢查後再提交", true);
+                return false;
+            }
+        }
+
+        showTemporaryMsg(msg, isError) {
+            let msgDiv = this.container.querySelector('.player-error-msg');
+            if (!msgDiv) {
+                msgDiv = document.createElement('div');
+                msgDiv.className = 'error-msg';
+                this.container.appendChild(msgDiv);
+            }
+            msgDiv.innerText = msg;
+            msgDiv.style.color = isError ? "#c0392b" : "#2c6e2f";
+            msgDiv.style.background = isError ? "#fae5e3" : "#e0f2e9";
+            setTimeout(() => {
+                if (msgDiv && msgDiv.parentNode) msgDiv.style.opacity = '0';
+                setTimeout(() => {
+                    if (msgDiv && msgDiv.parentNode) msgDiv.remove();
+                }, 400);
+            }, 2000);
+        }
+
+        hideErrorMsg() {
+            const old = this.container.querySelector('.player-error-msg');
+            if (old) old.remove();
+        }
+
+        render() {
+            if (!this.container) return;
+            const gridDiv = this.container.querySelector('.sudoku-grid');
+            if (!gridDiv) return;
+            gridDiv.innerHTML = '';
+            for (let i = 0; i < SIZE; i++) {
+                for (let j = 0; j < SIZE; j++) {
+                    const value = this.boardData[i][j];
+                    const isFixed = this.fixedMask[i][j];
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    if (isFixed) cell.classList.add('fixed');
+                    else if (value !== EMPTY) cell.classList.add('user-number');
+                    if (this.selectedRow === i && this.selectedCol === j && this.isActive && !this.isFinished && !this.isGameOver) cell.classList.add('selected');
+                    cell.setAttribute('data-row', i);
+                    cell.setAttribute('data-col', j);
+                    cell.innerText = value === EMPTY ? '' : value;
+                    if (this.isActive && !this.isFinished && !this.isGameOver) {
+                        cell.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            this.selectedRow = i;
+                            this.selectedCol = j;
+                            this.render();
+                        });
+                    } else {
+                        cell.style.cursor = 'default';
+                    }
+                    gridDiv.appendChild(cell);
+                }
+            }
+            const winnerSpan = this.container.querySelector('.winner-badge');
+            const loserSpan = this.container.querySelector('.loser-badge');
+            if (winnerSpan) {
+                if (this.isFinished && this.isWinner) {
+                    winnerSpan.innerText = '🏆 勝利!';
+                    winnerSpan.style.display = 'inline-block';
+                } else {
+                    winnerSpan.style.display = 'none';
+                }
+            }
+            if (loserSpan) {
+                if (this.isGameOver && !this.isWinner) {
+                    loserSpan.innerText = '😞 落敗';
+                    loserSpan.style.display = 'inline-block';
+                } else {
+                    loserSpan.style.display = 'none';
+                }
+            }
+        }
+
+        destroy() {
+            this.stopTimer();
+            if (this.container) this.container.innerHTML = '';
+        }
+    }
+
+    // ---------- 全域控制 ----------
+    let currentMode = 'single';
+    let singlePlayer = null;
+    let dualPlayers = { p1: null, p2: null };
+    let dualGameFinished = false;
+
+    const boardsArea = document.getElementById('boardsArea');
+    const newGameBtn = document.getElementById('newGameBtn');
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+
+    window.generateNewPuzzleForPlayer = () => {
+        const fullBoard = getRandomCompleteBoard();
+        const holes = getCurrentHoleCount();
+        return generatePuzzleFromFull(fullBoard, holes);
+    };
+
+    function generateNewGameForMode(mode) {
+        const holes = getCurrentHoleCount();
+        if (mode === 'single') {
+            const fullBoard = getRandomCompleteBoard();
+            const { puzzle, fixedMask } = generatePuzzleFromFull(fullBoard, holes);
+            return { puzzle, fixedMask };
+        } else {
+            const fullBoard = getRandomCompleteBoard();
+            const { puzzle: puzzle1, fixedMask: mask1 } = generatePuzzleFromFull(fullBoard, holes);
+            const { puzzle: puzzle2, fixedMask: mask2 } = generatePuzzleFromFull(fullBoard, holes);
+            return { p1Data: { puzzle: puzzle1, fixedMask: mask1 }, p2Data: { puzzle: puzzle2, fixedMask: mask2 } };
+        }
+    }
+
+    function onDualWin(playerId, timeSec) {
+        if (dualGameFinished) return;
+        dualGameFinished = true;
+        const winnerName = playerId === 'p1' ? '玩家 1' : '玩家 2';
+        const loserId = playerId === 'p1' ? 'p2' : 'p1';
+        if (dualPlayers[loserId]) {
+            dualPlayers[loserId].forceLose();
+        }
+        if (dualPlayers[playerId]) {
+            // 勝利者已經在 submit 中設定 isFinished=true, isWinner=true
+            dualPlayers[playerId].render();
+        }
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'status-msg';
+        const mins = Math.floor(timeSec / 60);
+        const secs = timeSec % 60;
+        msgDiv.innerText = `🏆 對決結束！ ${winnerName} 率先提交正確解答！ 用時 ${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')} 🏆`;
+        boardsArea.parentNode.insertBefore(msgDiv, boardsArea.nextSibling);
+        setTimeout(() => msgDiv.remove(), 5000);
+    }
+
+    function onSingleWin(playerId, timeSec) {
+        if (singlePlayer && singlePlayer.isFinished) return;
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'status-msg';
+        const mins = Math.floor(timeSec / 60);
+        const secs = timeSec % 60;
+        msgDiv.innerText = `🎉 恭喜完成單人數獨！ 用時 ${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')} 🎉`;
+        boardsArea.parentNode.insertBefore(msgDiv, boardsArea.nextSibling);
+        setTimeout(() => msgDiv.remove(), 4000);
+    }
+
+    function buildNumpadForPlayer(containerId, playerInstance) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        for (let num = 1; num <= 6; num++) {
+            const btn = document.createElement('button');
+            btn.className = 'num-btn';
+            btn.innerText = num;
+            btn.addEventListener('click', () => {
+                if (playerInstance && playerInstance.isActive && !playerInstance.isFinished && !playerInstance.isGameOver) playerInstance.inputNumber(num);
+            });
+            container.appendChild(btn);
+        }
+        const delBtn = document.createElement('button');
+        delBtn.className = 'num-btn del-btn';
+        delBtn.innerText = '⌫';
+        delBtn.addEventListener('click', () => {
+            if (playerInstance && playerInstance.isActive && !playerInstance.isFinished && !playerInstance.isGameOver) playerInstance.inputNumber(0);
+        });
+        container.appendChild(delBtn);
+        const btns = container.querySelectorAll('.num-btn');
+        btns.forEach(btn => btn.setAttribute('disabled', 'disabled'));
+    }
+
+    function buildSingleUI() {
+        const singleDiv = document.createElement('div');
+        singleDiv.className = 'player-board-area';
+        singleDiv.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                <div class="player-title">🧩 單人數獨</div>
+                <div class="timer-box">⏱️ <span class="timer-value">00:00</span></div>
+                <span class="winner-badge" style="display:none;">🏆 勝利!</span>
+            </div>
+            <div class="sudoku-grid"></div>
+            <div class="numpad" id="single-numpad"></div>
+            <div class="action-buttons">
+                <button class="start-btn">▶ 開始遊戲</button>
+                <button class="submit-btn" disabled>📤 提交答案</button>
+                <button class="reset-board-btn">🔄 重置本局</button>
+            </div>
+        `;
+        boardsArea.appendChild(singleDiv);
+        const { puzzle, fixedMask } = generateNewGameForMode('single');
+        singlePlayer = new SudokuPlayer(singleDiv, 'single', (id, t) => onSingleWin(id, t));
+        singlePlayer.initGame(puzzle, fixedMask);
+        buildNumpadForPlayer('single-numpad', singlePlayer);
+        const startBtn = singleDiv.querySelector('.start-btn');
+        const submitBtn = singleDiv.querySelector('.submit-btn');
+        const resetBtn = singleDiv.querySelector('.reset-board-btn');
+        startBtn.onclick = () => { if (singlePlayer) singlePlayer.startGame(); };
+        submitBtn.onclick = () => { if (singlePlayer) singlePlayer.submit(); };
+        resetBtn.onclick = () => { if (singlePlayer) singlePlayer.resetToInitial(); };
+    }
+
+    function buildDualUI() {
+        const gameData = generateNewGameForMode('dual');
+        const p1Div = createDualBoardDOM('玩家 1', 'p1');
+        const p2Div = createDualBoardDOM('玩家 2', 'p2');
+        boardsArea.appendChild(p1Div);
+        boardsArea.appendChild(p2Div);
+        dualPlayers.p1 = new SudokuPlayer(p1Div, 'p1', (id, t) => onDualWin(id, t));
+        dualPlayers.p2 = new SudokuPlayer(p2Div, 'p2', (id, t) => onDualWin(id, t));
+        dualPlayers.p1.initGame(gameData.p1Data.puzzle, gameData.p1Data.fixedMask);
+        dualPlayers.p2.initGame(gameData.p2Data.puzzle, gameData.p2Data.fixedMask);
+        buildNumpadForPlayer('numpad-p1', dualPlayers.p1);
+        buildNumpadForPlayer('numpad-p2', dualPlayers.p2);
+        const start1 = p1Div.querySelector('.start-btn');
+        const submit1 = p1Div.querySelector('.submit-btn');
+        const reset1 = p1Div.querySelector('.reset-board-btn');
+        const start2 = p2Div.querySelector('.start-btn');
+        const submit2 = p2Div.querySelector('.submit-btn');
+        const reset2 = p2Div.querySelector('.reset-board-btn');
+        start1.onclick = () => { if (!dualGameFinished && dualPlayers.p1 && !dualPlayers.p1.isFinished && !dualPlayers.p1.isGameOver) dualPlayers.p1.startGame(); };
+        submit1.onclick = () => { if (!dualGameFinished && dualPlayers.p1 && dualPlayers.p1.isActive && !dualPlayers.p1.isFinished && !dualPlayers.p1.isGameOver) dualPlayers.p1.submit(); };
+        reset1.onclick = () => { if (!dualGameFinished && dualPlayers.p1 && !dualPlayers.p1.isFinished && !dualPlayers.p1.isGameOver) dualPlayers.p1.resetToInitial(); };
+        start2.onclick = () => { if (!dualGameFinished && dualPlayers.p2 && !dualPlayers.p2.isFinished && !dualPlayers.p2.isGameOver) dualPlayers.p2.startGame(); };
+        submit2.onclick = () => { if (!dualGameFinished && dualPlayers.p2 && dualPlayers.p2.isActive && !dualPlayers.p2.isFinished && !dualPlayers.p2.isGameOver) dualPlayers.p2.submit(); };
+        reset2.onclick = () => { if (!dualGameFinished && dualPlayers.p2 && !dualPlayers.p2.isFinished && !dualPlayers.p2.isGameOver) dualPlayers.p2.resetToInitial(); };
+    }
+
+    function createDualBoardDOM(title, playerKey) {
+        const div = document.createElement('div');
+        div.className = 'player-board-area';
+        div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                <div class="player-title">${title}</div>
+                <div class="timer-box">⏱️ <span class="timer-value">00:00</span></div>
+                <span class="winner-badge" style="display:none;">🏆 勝利!</span>
+                <span class="loser-badge" style="display:none;">😞 落敗</span>
+            </div>
+            <div class="sudoku-grid"></div>
+            <div class="numpad" id="numpad-${playerKey}"></div>
+            <div class="action-buttons">
+                <button class="start-btn">▶ 開始遊戲</button>
+                <button class="submit-btn" disabled>📤 提交答案</button>
+                <button class="reset-board-btn">🔄 重置本局</button>
+            </div>
+        `;
+        return div;
+    }
+
+    function rebuildGameUI() {
+        boardsArea.innerHTML = '';
+        dualGameFinished = false;
+        if (currentMode === 'single') {
+            boardsArea.classList.add('single-mode');
+            buildSingleUI();
+        } else {
+            boardsArea.classList.remove('single-mode');
+            buildDualUI();
+        }
+    }
+
+    function switchMode(mode) {
+        currentMode = mode;
+        if (singlePlayer) { singlePlayer.destroy(); singlePlayer = null; }
+        if (dualPlayers.p1) { dualPlayers.p1.destroy(); dualPlayers.p2.destroy(); dualPlayers = { p1: null, p2: null }; }
+        rebuildGameUI();
+        modeBtns.forEach(btn => {
+            if (btn.dataset.mode === mode) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+    }
+
+    function resetFullGame() {
+        if (currentMode === 'single') {
+            if (singlePlayer) {
+                const { puzzle, fixedMask } = generateNewGameForMode('single');
+                singlePlayer.initGame(puzzle, fixedMask);
+            }
+        } else {
+            if (dualPlayers.p1 && dualPlayers.p2) {
+                const gameData = generateNewGameForMode('dual');
+                dualPlayers.p1.initGame(gameData.p1Data.puzzle, gameData.p1Data.fixedMask);
+                dualPlayers.p2.initGame(gameData.p2Data.puzzle, gameData.p2Data.fixedMask);
+                dualGameFinished = false;
+            } else {
+                rebuildGameUI();
+            }
+        }
+        const oldMsg = document.querySelector('.status-msg');
+        if(oldMsg) oldMsg.remove();
+    }
+
+    function setDifficulty(level) {
+        currentDifficulty = level;
+        difficultyBtns.forEach(btn => {
+            if (btn.dataset.diff === level) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+    }
+
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+    });
+    difficultyBtns.forEach(btn => {
+        btn.addEventListener('click', () => setDifficulty(btn.dataset.diff));
+    });
+    newGameBtn.addEventListener('click', () => resetFullGame());
+
+    switchMode('single');
+</script>
+</body>
+</html>
